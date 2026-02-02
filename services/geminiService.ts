@@ -1,17 +1,19 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { Resource } from "../types";
 
-// Initialize Gemini Client
-// Note: In a real production app, you might proxy this through a backend to hide the key,
-// but for this client-side demo, we use the env variable directly.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 export const analyzePortfolio = async (resources: Resource[]): Promise<string> => {
-  if (!process.env.API_KEY) {
-    return "API Key is missing. Please check your configuration.";
+  // Access key safely
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey) {
+    return "API Key is missing. Please configure 'API_KEY' in your environment variables.";
   }
 
   try {
+    // Initialize client lazily to avoid top-level crashes
+    const ai = new GoogleGenAI({ apiKey: apiKey });
+
     const prompt = `
       You are a System Administrator Advisor. Analyze the following JSON list of VPS and Domain resources.
       
