@@ -1,0 +1,5 @@
+{
+  "name": "CloudTrack",
+  "description": "A comprehensive dashboard to track VPS and Domain expirations.",
+  "requestFramePermissions": []
+}

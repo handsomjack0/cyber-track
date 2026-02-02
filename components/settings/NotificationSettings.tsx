@@ -1,0 +1,91 @@
+
+import React, { useState, useEffect } from 'react';
+import { Bell, Clock, Save } from 'lucide-react';
+import { AppSettings } from '../../types';
+import { getSettings, saveSettings } from '../../services/settings/settingsService';
+import TelegramChannel from './channels/TelegramChannel';
+import EmailChannel from './channels/EmailChannel';
+import WebhookChannel from './channels/WebhookChannel';
+
+const NotificationSettings: React.FC = () => {
+  const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setSettings(getSettings());
+  }, []);
+
+  const handleSave = () => {
+    if (settings) {
+      saveSettings(settings);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
+
+  if (!settings) return null;
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center justify-between mb-6 pb-6 border-b border-slate-100">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Bell className="text-indigo-600" size={20} />
+              通知渠道配置
+            </h2>
+            <p className="text-slate-500 text-sm mt-1">
+              配置您希望接收到期提醒的方式和频率。
+            </p>
+          </div>
+          <button 
+            onClick={handleSave}
+            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all shadow-sm
+              ${saved ? 'bg-green-600 text-white' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
+          >
+            {saved ? '已保存' : '保存配置'}
+            {!saved && <Save size={16} />}
+          </button>
+        </div>
+
+        {/* Global Reminder Setting */}
+        <div className="mb-8">
+           <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+             <Clock size={16} />
+             提前通知时间
+           </label>
+           <div className="flex items-center gap-3">
+             <input 
+                type="range" 
+                min="1" 
+                max="30" 
+                value={settings.reminderDays}
+                onChange={(e) => setSettings({...settings, reminderDays: parseInt(e.target.value)})}
+                className="w-64 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+             />
+             <span className="font-mono font-bold text-indigo-600 w-8 text-center">{settings.reminderDays}</span>
+             <span className="text-sm text-slate-500">天前发送提醒</span>
+           </div>
+        </div>
+
+        {/* Channels Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           <TelegramChannel 
+             config={settings.telegram} 
+             onChange={(cfg) => setSettings({...settings, telegram: cfg})} 
+           />
+           <EmailChannel 
+             config={settings.email} 
+             onChange={(cfg) => setSettings({...settings, email: cfg})} 
+           />
+           <WebhookChannel 
+             config={settings.webhook} 
+             onChange={(cfg) => setSettings({...settings, webhook: cfg})} 
+           />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default NotificationSettings;
