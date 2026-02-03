@@ -44,12 +44,14 @@ export async function handleStatus(env: Env, chatId: number, resources: Resource
   const vpsCount = resources.filter(r => r.type === 'VPS').length;
   const domainCount = resources.filter(r => r.type === 'DOMAIN').length;
   const accountCount = resources.filter(r => r.type === 'ACCOUNT').length;
+  const phoneCount = resources.filter(r => r.type === 'PHONE_NUMBER').length;
 
   const text = `📊 <b>系统状态概览</b>\n` +
                `━━━━━━━━━━━━━━━━\n` +
                `📦 <b>总资产数:</b> ${total}\n` +
                `   ├ 🖥️ VPS: ${vpsCount}\n` +
                `   ├ 🌐 域名: ${domainCount}\n` +
+               `   ├ 📱 号码: ${phoneCount}\n` +
                `   └ 🔑 账号: ${accountCount}\n\n` +
                `🚨 <b>已过期:</b> ${expired}\n` +
                `⚠️ <b>30天内到期:</b> ${urgent}\n\n` +

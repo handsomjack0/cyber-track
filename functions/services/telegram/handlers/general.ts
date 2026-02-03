@@ -26,7 +26,8 @@ export async function handleHelp(env: Env, chatId: number) {
                `/list - 查看所有资产\n` +
                `/vps - 仅查看 VPS\n` +
                `/domains - 仅查看域名\n` +
-               `/accounts - 仅查看账号订阅`;
+               `/accounts - 仅查看账号订阅\n` +
+               `/cellphones - 仅查看手机号码`;
   
   await sendMessage(env.TELEGRAM_BOT_TOKEN!, { chat_id: chatId, text, parse_mode: 'HTML' });
 }
