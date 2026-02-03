@@ -105,7 +105,7 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
       [BillingCycle.ONE_TIME]: { label: '买断', color: 'text-emerald-600 bg-emerald-50' },
     };
     const c = map[cycle] || map[BillingCycle.MONTHLY];
-    return <span className={`text-[10px] px-1.5 py-0.5 rounded ml-2 ${c.color}`}>{c.label}</span>;
+    return <span className={`text-[10px] px-1.5 py-0.5 rounded ml-1.5 font-normal ${c.color}`}>{c.label}</span>;
   };
 
   return (
@@ -157,7 +157,6 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
                           </div>
                           <div className="flex items-center mt-0.5 gap-2">
                              <p className="text-xs text-slate-400 font-mono">ID: {resource.id.slice(0, 4)}</p>
-                             {resource.type === ResourceType.ACCOUNT && <CycleBadge cycle={resource.billingCycle} />}
                              {resource.notes && <StickyNote size={12} className="text-slate-300" />}
                           </div>
                         </div>
@@ -174,6 +173,7 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
                     </td>
                     <td className="px-6 py-4 text-right font-mono font-medium text-slate-900">
                       {resource.currency}{resource.cost.toFixed(2)}
+                      {resource.type === ResourceType.ACCOUNT && <CycleBadge cycle={resource.billingCycle} />}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0">

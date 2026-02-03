@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Server, Globe, Edit2, Smartphone, Key, StickyNote } from 'lucide-react';
-import { Resource, ResourceType } from '../../types';
+import { Resource, ResourceType, BillingCycle } from '../../types';
 import { getDaysRemaining, getStatusStyles } from '../../utils/resourceUtils';
 
 interface CardViewProps {
@@ -27,6 +27,17 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
       case ResourceType.PHONE_NUMBER: return 'bg-teal-100 text-teal-600';
       case ResourceType.ACCOUNT: return 'bg-amber-100 text-amber-600';
       default: return 'bg-black text-white';
+    }
+  };
+
+  const getCycleLabel = (cycle?: BillingCycle) => {
+    if (!cycle) return '/y';
+    switch (cycle) {
+      case BillingCycle.MONTHLY: return '/mo';
+      case BillingCycle.QUARTERLY: return '/qtr';
+      case BillingCycle.YEARLY: return '/yr';
+      case BillingCycle.ONE_TIME: return '';
+      default: return '/y';
     }
   };
 
@@ -84,7 +95,10 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
                 </div>
               </div>
               <div className="text-right">
-                 <p className="text-sm font-mono font-medium text-slate-500">{item.currency}{item.cost}<span className="text-xs opacity-50">/y</span></p>
+                 <p className="text-sm font-mono font-medium text-slate-500">
+                    {item.currency}{item.cost}
+                    <span className="text-xs opacity-50 ml-0.5">{getCycleLabel(item.billingCycle)}</span>
+                 </p>
               </div>
             </div>
 

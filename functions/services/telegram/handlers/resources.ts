@@ -1,10 +1,11 @@
 
 import { Env, Resource, ResourceType } from '../../../utils/storage';
 import { sendMessage } from '../client';
+import { formatResourceItem } from '../formatters/index';
 
-// Helper: Calculate days remaining
+// Helper: Calculate days remaining for sorting
 const getDaysRemaining = (expiryDate?: string) => {
-  if (!expiryDate) return 9999; // Infinite
+  if (!expiryDate) return 9999; 
   const today = new Date();
   const target = new Date(expiryDate);
   today.setHours(0, 0, 0, 0);
@@ -13,42 +14,18 @@ const getDaysRemaining = (expiryDate?: string) => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
-const getResourceIcon = (type: string) => {
-  switch (type) {
-    case 'VPS': return '🖥️';
-    case 'DOMAIN': return '🌐';
-    case 'PHONE_NUMBER': return '📱';
-    case 'ACCOUNT': return '🔑';
-    default: return '📦';
-  }
-};
-
 const formatResourceList = (list: Resource[], title: string): string => {
   if (list.length === 0) return `📭 <b>${title}</b>\n\n暂无相关资产。`;
 
   let text = `📋 <b>${title} (${list.length}):</b>\n\n`;
-  const displayed = list.slice(0, 15); // Limit per message
+  const displayed = list.slice(0, 10); // Limit per message to avoid too long text
 
   displayed.forEach(item => {
-    const days = getDaysRemaining(item.expiryDate);
-    let statusIcon = '🟢';
-    let statusText = `${days}天`;
-
-    if (item.expiryDate) {
-        if (days < 0) { statusIcon = '🔴'; statusText = `过期${Math.abs(days)}天`; }
-        else if (days <= 30) { statusIcon = '🟠'; statusText = `${days}天`; }
-    } else {
-        statusIcon = '♾️'; statusText = '长期';
-    }
-
-    const typeIcon = getResourceIcon(item.type);
-    
-    text += `${statusIcon} ${typeIcon} <b>${item.name}</b>\n` +
-            `   └ ${item.provider} | ${statusText} | ${item.currency}${item.cost}\n`;
+    text += formatResourceItem(item) + '\n\n';
   });
 
-  if (list.length > 15) {
-    text += `\n<i>...以及其他 ${list.length - 15} 个资产，请使用搜索功能。</i>`;
+  if (list.length > 10) {
+    text += `<i>...以及其他 ${list.length - 10} 个资产，请使用 /search 查找。</i>`;
   }
   return text;
 };
@@ -63,8 +40,17 @@ export async function handleStatus(env: Env, chatId: number, resources: Resource
   const expired = resources.filter(r => r.expiryDate && getDaysRemaining(r.expiryDate) < 0).length;
   const urgent = resources.filter(r => r.expiryDate && getDaysRemaining(r.expiryDate) >= 0 && getDaysRemaining(r.expiryDate) <= 30).length;
 
-  const text = `📊 <b>系统状态概览</b>\n\n` +
+  // Group by type stats
+  const vpsCount = resources.filter(r => r.type === 'VPS').length;
+  const domainCount = resources.filter(r => r.type === 'DOMAIN').length;
+  const accountCount = resources.filter(r => r.type === 'ACCOUNT').length;
+
+  const text = `📊 <b>系统状态概览</b>\n` +
+               `━━━━━━━━━━━━━━━━\n` +
                `📦 <b>总资产数:</b> ${total}\n` +
+               `   ├ 🖥️ VPS: ${vpsCount}\n` +
+               `   ├ 🌐 域名: ${domainCount}\n` +
+               `   └ 🔑 账号: ${accountCount}\n\n` +
                `🚨 <b>已过期:</b> ${expired}\n` +
                `⚠️ <b>30天内到期:</b> ${urgent}\n\n` +
                `发送 /expiring 查看需处理项`;
@@ -88,6 +74,11 @@ export async function handleList(env: Env, chatId: number, resources: Resource[]
   if (typeFilter) {
     list = list.filter(r => r.type === typeFilter);
     title = `${typeFilter} 列表`;
+    // Map nice titles
+    if (typeFilter === 'VPS') title = '🖥️ VPS 主机列表';
+    if (typeFilter === 'DOMAIN') title = '🌐 域名列表';
+    if (typeFilter === 'ACCOUNT') title = '🔑 账号订阅列表';
+    if (typeFilter === 'PHONE_NUMBER') title = '📱 手机号码列表';
   }
   
   // Sort by expiry
