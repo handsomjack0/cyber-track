@@ -18,7 +18,8 @@ const HeatmapView: React.FC<HeatmapViewProps> = ({ resources }) => {
     const checkDate = new Date(today);
     checkDate.setDate(today.getDate() + dayOffset);
     const dateStr = checkDate.toISOString().split('T')[0];
-    return resources.filter(r => r.expiryDate === dateStr);
+    // Only check resources that HAVE an expiry date
+    return resources.filter(r => r.expiryDate && r.expiryDate === dateStr);
   };
 
   const grid = [];
@@ -31,6 +32,7 @@ const HeatmapView: React.FC<HeatmapViewProps> = ({ resources }) => {
       case ResourceType.VPS: return 'bg-blue-400';
       case ResourceType.DOMAIN: return 'bg-purple-400';
       case ResourceType.PHONE_NUMBER: return 'bg-teal-400';
+      case ResourceType.ACCOUNT: return 'bg-amber-400';
       default: return 'bg-slate-400';
     }
   };

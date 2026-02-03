@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Bell, Clock, Save } from 'lucide-react';
+import { Bell, Clock, Save, Loader2 } from 'lucide-react';
 import { AppSettings } from '../../types';
 import { getSettings, saveSettings } from '../../services/settings/settingsService';
 import TelegramChannel from './channels/TelegramChannel';
@@ -9,39 +9,53 @@ import WebhookChannel from './channels/WebhookChannel';
 
 const NotificationSettings: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setSettings(getSettings());
+    const load = async () => {
+      const data = await getSettings();
+      setSettings(data);
+      setLoading(false);
+    };
+    load();
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (settings) {
-      saveSettings(settings);
+      await saveSettings(settings);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center p-12">
+        <Loader2 className="animate-spin text-indigo-500" />
+      </div>
+    );
+  }
+
   if (!settings) return null;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center justify-between mb-6 pb-6 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center justify-between mb-6 pb-6 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Bell className="text-indigo-600" size={20} />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Bell className="text-indigo-600 dark:text-indigo-400" size={20} />
               通知渠道配置
             </h2>
-            <p className="text-slate-500 text-sm mt-1">
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
               配置您希望接收到期提醒的方式和频率。
             </p>
           </div>
           <button 
             onClick={handleSave}
             className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all shadow-sm
-              ${saved ? 'bg-green-600 text-white' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
+              ${saved ? 'bg-green-600 text-white' : 'bg-slate-900 dark:bg-indigo-600 text-white hover:bg-slate-800 dark:hover:bg-indigo-700'}`}
           >
             {saved ? '已保存' : '保存配置'}
             {!saved && <Save size={16} />}
@@ -50,7 +64,7 @@ const NotificationSettings: React.FC = () => {
 
         {/* Global Reminder Setting */}
         <div className="mb-8">
-           <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
              <Clock size={16} />
              提前通知时间
            </label>
@@ -61,10 +75,10 @@ const NotificationSettings: React.FC = () => {
                 max="30" 
                 value={settings.reminderDays}
                 onChange={(e) => setSettings({...settings, reminderDays: parseInt(e.target.value)})}
-                className="w-64 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                className="w-64 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
              />
-             <span className="font-mono font-bold text-indigo-600 w-8 text-center">{settings.reminderDays}</span>
-             <span className="text-sm text-slate-500">天前发送提醒</span>
+             <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 w-8 text-center">{settings.reminderDays}</span>
+             <span className="text-sm text-slate-500 dark:text-slate-400">天前发送提醒</span>
            </div>
         </div>
 

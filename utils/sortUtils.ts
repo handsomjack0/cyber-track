@@ -9,8 +9,10 @@ export const sortResources = (resources: Resource[], config: SortConfig): Resour
 
     // Handle date comparison specifically
     if (field === 'expiryDate') {
-      aVal = new Date(a.expiryDate).getTime();
-      bVal = new Date(b.expiryDate).getTime();
+      // Treat missing dates as far future (Infinity) or far past (0) depending on needs.
+      // Usually "No expiry" means active forever, so let's put them at the end of ASC sort.
+      aVal = a.expiryDate ? new Date(a.expiryDate).getTime() : 9999999999999;
+      bVal = b.expiryDate ? new Date(b.expiryDate).getTime() : 9999999999999;
     }
     
     // Handle string case-insensitive comparison

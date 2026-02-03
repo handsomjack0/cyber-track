@@ -1,7 +1,7 @@
 
 import { Env } from '../utils/storage';
 import { TelegramUpdate } from '../services/telegram/types';
-import { processTelegramCommand } from '../services/telegram/commands';
+import { processTelegramCommand } from '../services/telegram/dispatcher';
 
 export const onRequestPost = async (context: { request: Request; env: Env }) => {
   const { request, env } = context;

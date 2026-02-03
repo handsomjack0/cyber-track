@@ -2,13 +2,21 @@
 export enum ResourceType {
   VPS = 'VPS',
   DOMAIN = 'DOMAIN',
-  PHONE_NUMBER = 'PHONE_NUMBER'
+  PHONE_NUMBER = 'PHONE_NUMBER',
+  ACCOUNT = 'ACCOUNT'
 }
 
 export enum Status {
   ACTIVE = 'Active',
   EXPIRED = 'Expired',
   PENDING = 'Pending'
+}
+
+export enum BillingCycle {
+  MONTHLY = 'Monthly',
+  YEARLY = 'Yearly',
+  ONE_TIME = 'OneTime',
+  QUARTERLY = 'Quarterly'
 }
 
 export interface ResourceNotificationSettings {
@@ -26,13 +34,15 @@ export interface Resource {
   id: string;
   name: string;
   provider: string;
-  expiryDate: string;
+  expiryDate?: string;
   cost: number;
   currency: string;
   type: ResourceType;
   status: Status;
   autoRenew: boolean;
   notes?: string;
+  billingCycle?: BillingCycle;
+  startDate?: string;
   notificationSettings?: ResourceNotificationSettings;
 }
 

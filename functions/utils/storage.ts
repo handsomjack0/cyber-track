@@ -13,39 +13,86 @@ export interface Env {
   API_KEY?: string;
 }
 
+export interface ResourceNotificationSettings {
+  enabled: boolean;
+  useGlobal: boolean;
+  reminderDays?: number;
+  channels?: {
+    telegram: boolean;
+    email: boolean;
+    webhook: boolean;
+  };
+}
+
+export type ResourceType = 'VPS' | 'DOMAIN' | 'PHONE_NUMBER' | 'ACCOUNT';
+
 export interface Resource {
   id: string;
   name: string;
   provider: string;
-  expiryDate: string;
+  expiryDate?: string;
   cost: number;
   currency: string;
-  type: 'VPS' | 'DOMAIN' | 'PHONE_NUMBER';
+  type: ResourceType;
   status: string;
   autoRenew: boolean;
+  startDate?: string;
+  billingCycle?: 'Monthly' | 'Yearly' | 'OneTime' | 'Quarterly';
+  notes?: string;
+  notificationSettings?: ResourceNotificationSettings;
+}
+
+export interface AppSettings {
+  reminderDays: number;
+  telegram: {
+    enabled: boolean;
+    chatId: string;
+  };
+  email: {
+    enabled: boolean;
+    email: string;
+  };
+  webhook: {
+    enabled: boolean;
+    url: string;
+  };
 }
 
 const DB_KEY = 'resources_data';
+const SETTINGS_KEY = 'app_settings';
 
-// Empty initial data for production
+// Empty initial data
 const INITIAL_DATA: Resource[] = [];
+const DEFAULT_SETTINGS: AppSettings = {
+  reminderDays: 7,
+  telegram: { enabled: false, chatId: '' },
+  email: { enabled: false, email: '' },
+  webhook: { enabled: false, url: '' }
+};
 
 export async function getResources(env: Env): Promise<Resource[]> {
-  // If KV is not bound (local dev without bindings), return empty
-  if (!env.CLOUDTRACK_KV) {
-    return INITIAL_DATA;
-  }
-  
+  if (!env.CLOUDTRACK_KV) return INITIAL_DATA;
   const data = await env.CLOUDTRACK_KV.get(DB_KEY);
-  if (!data) {
-    return INITIAL_DATA;
-  }
+  if (!data) return INITIAL_DATA;
   return JSON.parse(data);
 }
 
 export async function saveResources(env: Env, resources: Resource[]): Promise<void> {
   if (!env.CLOUDTRACK_KV) return;
   await env.CLOUDTRACK_KV.put(DB_KEY, JSON.stringify(resources));
+}
+
+export async function getSettings(env: Env): Promise<AppSettings> {
+  if (!env.CLOUDTRACK_KV) return DEFAULT_SETTINGS;
+  const data = await env.CLOUDTRACK_KV.get(SETTINGS_KEY);
+  if (!data) return DEFAULT_SETTINGS;
+  // Merge with default to ensure new fields exist
+  return { ...DEFAULT_SETTINGS, ...JSON.parse(data) };
+}
+
+export async function saveSettings(env: Env, settings: AppSettings): Promise<void> {
+  if (!env.CLOUDTRACK_KV) return;
+  await env.CLOUDTRACK_KV.put(SETTINGS_KEY, JSON.stringify(settings));
 }
 
 export function jsonResponse(data: any, status = 200) {
@@ -63,10 +110,7 @@ export function errorResponse(message: string, status = 400) {
 }
 
 export function checkAuth(request: Request, env: Env): boolean {
-  // In production, check header 'x-api-key' against env.API_SECRET
   const apiKey = request.headers.get('x-api-key');
-  // If API_SECRET is not set, we default to allow for demo purposes, 
-  // BUT in real app this should default to block.
   if (!env.API_SECRET) return true; 
   return apiKey === env.API_SECRET;
 }

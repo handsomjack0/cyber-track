@@ -123,6 +123,19 @@ const App: React.FC = () => {
             addButtonLabel="添加域名"
           />
         );
+      case 'accounts':
+        return (
+          <ResourceListView 
+            title="账号管理" 
+            subtitle="管理会员订阅、软件授权及其他账号服务"
+            resources={resources}
+            resourceType={ResourceType.ACCOUNT}
+            onAdd={openAddModal}
+            onEdit={openEditModal}
+            onDelete={handleDelete}
+            addButtonLabel="添加账号"
+          />
+        );
       case 'cellphones':
         return (
           <ResourceListView 

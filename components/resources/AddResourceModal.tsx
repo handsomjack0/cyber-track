@@ -1,7 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Resource, ResourceType, Status } from '../../types';
-import { X, Save, Bell, Settings2 } from 'lucide-react';
+import { X, Save, Bell, Settings2, LayoutGrid, Key } from 'lucide-react';
+import InfrastructureForm from './forms/InfrastructureForm';
+import AccountForm from './forms/AccountForm';
 
 interface AddResourceModalProps {
   isOpen: boolean;
@@ -11,16 +13,9 @@ interface AddResourceModalProps {
 }
 
 const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, onSave, initialData }) => {
-  // Basic Info State
-  const [formData, setFormData] = useState({
-    name: '',
-    provider: '',
-    expiryDate: '',
-    cost: '',
-    currency: '$',
-    type: ResourceType.VPS,
-    autoRenew: false,
-  });
+  const [activeTab, setActiveTab] = useState<'basic' | 'notifications'>('basic');
+  // 'infrastructure' covers VPS, DOMAIN, PHONE_NUMBER. 'account' covers ACCOUNT.
+  const [category, setCategory] = useState<'infrastructure' | 'account'>('infrastructure');
 
   // Notification State
   const [notifySettings, setNotifySettings] = useState({
@@ -34,26 +29,18 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
     }
   });
 
-  // Tab State for cleaner UI
-  const [activeTab, setActiveTab] = useState<'basic' | 'notifications'>('basic');
-
   useEffect(() => {
     if (isOpen) {
-      // Reset Tab
       setActiveTab('basic');
-
       if (initialData) {
-        setFormData({
-          name: initialData.name,
-          provider: initialData.provider,
-          expiryDate: initialData.expiryDate,
-          cost: initialData.cost.toString(),
-          currency: initialData.currency,
-          type: initialData.type,
-          autoRenew: initialData.autoRenew,
-        });
+        // Determine category based on type
+        if (initialData.type === ResourceType.ACCOUNT) {
+          setCategory('account');
+        } else {
+          setCategory('infrastructure');
+        }
 
-        // Load Notification Settings if exist, else default
+        // Load Notification Settings
         if (initialData.notificationSettings) {
           setNotifySettings({
             enabled: initialData.notificationSettings.enabled,
@@ -62,7 +49,6 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
             channels: initialData.notificationSettings.channels ?? { telegram: true, email: false, webhook: false }
           });
         } else {
-          // Default for existing items without settings
           setNotifySettings({
             enabled: true,
             useGlobal: true,
@@ -71,16 +57,8 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
           });
         }
       } else {
-        // Reset for new item
-        setFormData({
-          name: '',
-          provider: '',
-          expiryDate: '',
-          cost: '',
-          currency: '$',
-          type: ResourceType.VPS,
-          autoRenew: false,
-        });
+        // Default new
+        setCategory('infrastructure');
         setNotifySettings({
           enabled: true,
           useGlobal: true,
@@ -93,31 +71,65 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleFormSubmit = (data: Partial<Resource>) => {
     const resourceToSave: Resource = {
       id: initialData?.id || Date.now().toString(),
-      name: formData.name,
-      provider: formData.provider,
-      expiryDate: formData.expiryDate,
-      cost: parseFloat(formData.cost) || 0,
-      currency: formData.currency,
-      type: formData.type,
+      name: data.name!,
+      provider: data.provider!,
+      expiryDate: data.expiryDate, // Can be undefined
+      startDate: data.startDate, 
+      cost: data.cost || 0,
+      currency: data.currency!,
+      type: data.type!,
+      billingCycle: data.billingCycle, 
       status: initialData?.status || Status.ACTIVE, 
-      autoRenew: formData.autoRenew,
+      autoRenew: data.autoRenew || false,
+      notes: data.notes,
       notificationSettings: {
         enabled: notifySettings.enabled,
         useGlobal: notifySettings.useGlobal,
-        // Only save details if not using global
         reminderDays: notifySettings.useGlobal ? undefined : notifySettings.reminderDays,
         channels: notifySettings.useGlobal ? undefined : notifySettings.channels
       }
     };
-
     onSave(resourceToSave);
     onClose();
   };
+
+  // Category Selector
+  const CategorySelector = () => (
+    <div className="flex gap-4 mb-6 border-b border-slate-100">
+       <button
+         type="button"
+         onClick={() => setCategory('infrastructure')}
+         className={`pb-3 text-sm font-medium transition-all relative ${
+           category === 'infrastructure' 
+            ? 'text-indigo-600' 
+            : 'text-slate-500 hover:text-slate-700'
+         }`}
+       >
+         <div className="flex items-center gap-2">
+           <LayoutGrid size={16} /> 基础设施资产
+         </div>
+         {category === 'infrastructure' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-t-full"></div>}
+       </button>
+
+       <button
+         type="button"
+         onClick={() => setCategory('account')}
+         className={`pb-3 text-sm font-medium transition-all relative ${
+           category === 'account' 
+            ? 'text-amber-600' 
+            : 'text-slate-500 hover:text-slate-700'
+         }`}
+       >
+         <div className="flex items-center gap-2">
+           <Key size={16} /> 账号与订阅
+         </div>
+         {category === 'account' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-600 rounded-t-full"></div>}
+       </button>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity">
@@ -132,19 +144,19 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
           </button>
         </div>
         
-        {/* Tabs */}
-        <div className="flex border-b border-slate-100 shrink-0">
+        {/* Main Tabs (Basic vs Notify) */}
+        <div className="flex border-b border-slate-100 shrink-0 bg-white">
           <button
             type="button"
             onClick={() => setActiveTab('basic')}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'basic' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'basic' ? 'text-slate-900 bg-white' : 'text-slate-500 bg-slate-50 hover:bg-slate-100'}`}
           >
             基本信息
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('notifications')}
-            className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${activeTab === 'notifications' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${activeTab === 'notifications' ? 'text-slate-900 bg-white' : 'text-slate-500 bg-slate-50 hover:bg-slate-100'}`}
           >
             <Bell size={14} /> 通知设置
           </button>
@@ -152,229 +164,96 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
 
         {/* Scrollable Content */}
         <div className="overflow-y-auto p-6">
-          <form id="resourceForm" onSubmit={handleSubmit} className="space-y-4">
+          
+          {/* --- BASIC TAB --- */}
+          <div className={activeTab === 'basic' ? 'block' : 'hidden'}>
             
-            {/* --- BASIC TAB --- */}
-            <div className={activeTab === 'basic' ? 'block' : 'hidden'}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">名称 / 域名 / 号码</label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="例如：Production Server 或 google.com"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm transition-shadow"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  />
-                </div>
+            {/* Show category switcher only when creating new */}
+            {!initialData && <CategorySelector />}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">服务商</label>
-                    <input
-                      required
-                      type="text"
-                      placeholder="例如：AWS"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
-                      value={formData.provider}
-                      onChange={(e) => setFormData({...formData, provider: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">类型</label>
-                    <select
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white transition-shadow"
-                      value={formData.type}
-                      onChange={(e) => setFormData({...formData, type: e.target.value as ResourceType})}
+            {category === 'account' ? (
+              <AccountForm 
+                initialData={initialData} 
+                onSubmit={handleFormSubmit} 
+              />
+            ) : (
+              <InfrastructureForm 
+                initialData={initialData} 
+                onSubmit={handleFormSubmit} 
+              />
+            )}
+          </div>
+
+          {/* --- NOTIFICATION TAB --- */}
+          <div className={activeTab === 'notifications' ? 'block' : 'hidden'}>
+            <div className="space-y-5">
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div>
+                  <h4 className="text-sm font-medium text-slate-900">启用到期提醒</h4>
+                  <p className="text-xs text-slate-500">关闭后将不再发送该资产的任何通知</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={notifySettings.enabled}
+                    onChange={(e) => setNotifySettings({...notifySettings, enabled: e.target.checked})}
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-100 rounded-full peer peer-checked:bg-indigo-600"></div>
+                </label>
+              </div>
+
+              {notifySettings.enabled && (
+                <div className="space-y-4 animate-fade-in">
+                  {/* Strategy Selection */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setNotifySettings({...notifySettings, useGlobal: true})}
+                      className={`p-3 rounded-lg border text-left transition-all ${notifySettings.useGlobal ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}
                     >
-                      <option value={ResourceType.VPS}>VPS 主机</option>
-                      <option value={ResourceType.DOMAIN}>域名</option>
-                      <option value={ResourceType.PHONE_NUMBER}>手机号码</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">到期时间</label>
-                  <input
-                    required
-                    type="date"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
-                    value={formData.expiryDate}
-                    onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">费用</label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2 text-slate-500 text-sm">{formData.currency}</span>
-                        <input
-                          required
-                          type="number"
-                          step="0.01"
-                          className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
-                          value={formData.cost}
-                          onChange={(e) => setFormData({...formData, cost: e.target.value})}
-                        />
+                      <div className="font-medium text-sm mb-1">跟随全局</div>
+                      <div className="text-xs opacity-80">使用系统默认提醒策略</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotifySettings({...notifySettings, useGlobal: false})}
+                      className={`p-3 rounded-lg border text-left transition-all ${!notifySettings.useGlobal ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}
+                    >
+                      <div className="font-medium text-sm flex items-center gap-1.5 mb-1">
+                        自定义 <Settings2 size={14} />
                       </div>
+                      <div className="text-xs opacity-80">单独设置此资产规则</div>
+                    </button>
                   </div>
-                  <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">货币符号</label>
-                      <select 
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white transition-shadow"
-                        value={formData.currency}
-                        onChange={(e) => setFormData({...formData, currency: e.target.value})}
-                      >
-                        <option value="$">$ (USD)</option>
-                        <option value="¥">¥ (CNY)</option>
-                        <option value="€">€ (EUR)</option>
-                      </select>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2 pt-2">
-                  <input
-                    type="checkbox"
-                    id="autoRenew"
-                    className="rounded text-indigo-600 focus:ring-indigo-500"
-                    checked={formData.autoRenew}
-                    onChange={(e) => setFormData({...formData, autoRenew: e.target.checked})}
-                  />
-                  <label htmlFor="autoRenew" className="text-sm text-slate-600">已开启自动续费</label>
-                </div>
-              </div>
-            </div>
-
-            {/* --- NOTIFICATION TAB --- */}
-            <div className={activeTab === 'notifications' ? 'block' : 'hidden'}>
-              <div className="space-y-5">
-                
-                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-900">启用到期提醒</h4>
-                    <p className="text-xs text-slate-500">关闭后将不再发送该资产的任何通知</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only peer" 
-                      checked={notifySettings.enabled}
-                      onChange={(e) => setNotifySettings({...notifySettings, enabled: e.target.checked})}
-                    />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
-
-                {notifySettings.enabled && (
-                  <div className="space-y-4 animate-fade-in">
-                    
-                    {/* Strategy Selection */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setNotifySettings({...notifySettings, useGlobal: true})}
-                        className={`p-3 rounded-lg border text-left transition-all ${notifySettings.useGlobal 
-                          ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                          : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}
-                      >
-                        <div className="font-medium text-sm mb-1">跟随全局</div>
-                        <div className="text-xs opacity-80">使用系统默认提醒策略</div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setNotifySettings({...notifySettings, useGlobal: false})}
-                        className={`p-3 rounded-lg border text-left transition-all ${!notifySettings.useGlobal 
-                          ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                          : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}
-                      >
-                        <div className="font-medium text-sm flex items-center gap-1.5 mb-1">
-                          自定义 <Settings2 size={14} />
+                  {/* Custom Settings Area */}
+                  {!notifySettings.useGlobal && (
+                    <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-4 shadow-sm animate-fade-in">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                          提前通知天数
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <input 
+                            type="range" 
+                            min="1" 
+                            max="60" 
+                            value={notifySettings.reminderDays}
+                            onChange={(e) => setNotifySettings({...notifySettings, reminderDays: parseInt(e.target.value)})}
+                            className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                          />
+                          <div className="w-12 h-8 flex items-center justify-center bg-slate-100 rounded text-sm font-mono font-medium text-indigo-600 border border-slate-200">
+                            {notifySettings.reminderDays}
+                          </div>
                         </div>
-                        <div className="text-xs opacity-80">单独设置此资产规则</div>
-                      </button>
+                      </div>
                     </div>
-
-                    {/* Custom Settings Area */}
-                    {!notifySettings.useGlobal && (
-                      <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-4 shadow-sm animate-fade-in">
-                        
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                            提前通知天数
-                          </label>
-                          <div className="flex items-center gap-3">
-                            <input 
-                              type="range" 
-                              min="1" 
-                              max="60" 
-                              value={notifySettings.reminderDays}
-                              onChange={(e) => setNotifySettings({...notifySettings, reminderDays: parseInt(e.target.value)})}
-                              className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                            />
-                            <div className="w-12 h-8 flex items-center justify-center bg-slate-100 rounded text-sm font-mono font-medium text-indigo-600 border border-slate-200">
-                              {notifySettings.reminderDays}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                            通知渠道
-                          </label>
-                          <div className="space-y-2">
-                            <label className="flex items-center gap-2 p-2 rounded hover:bg-slate-50 cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                className="rounded text-indigo-600 focus:ring-indigo-500"
-                                checked={notifySettings.channels.telegram}
-                                onChange={(e) => setNotifySettings({
-                                  ...notifySettings, 
-                                  channels: {...notifySettings.channels, telegram: e.target.checked}
-                                })}
-                              />
-                              <span className="text-sm text-slate-700">Telegram Bot</span>
-                            </label>
-                            
-                            <label className="flex items-center gap-2 p-2 rounded hover:bg-slate-50 cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                className="rounded text-indigo-600 focus:ring-indigo-500"
-                                checked={notifySettings.channels.email}
-                                onChange={(e) => setNotifySettings({
-                                  ...notifySettings, 
-                                  channels: {...notifySettings.channels, email: e.target.checked}
-                                })}
-                              />
-                              <span className="text-sm text-slate-700">Email</span>
-                            </label>
-
-                            <label className="flex items-center gap-2 p-2 rounded hover:bg-slate-50 cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                className="rounded text-indigo-600 focus:ring-indigo-500"
-                                checked={notifySettings.channels.webhook}
-                                onChange={(e) => setNotifySettings({
-                                  ...notifySettings, 
-                                  channels: {...notifySettings.channels, webhook: e.target.checked}
-                                })}
-                              />
-                              <span className="text-sm text-slate-700">Webhook</span>
-                            </label>
-                          </div>
-                        </div>
-
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
-
-          </form>
+          </div>
         </div>
 
         {/* Footer */}
@@ -388,9 +267,9 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
               取消
             </button>
             <button
-              form="resourceForm"
+              form="resourceForm" // Connects to the active form ID
               type="submit"
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm transition-colors shadow-sm flex items-center justify-center gap-2"
+              className={`flex-1 px-4 py-2 text-white rounded-lg font-medium text-sm transition-colors shadow-sm flex items-center justify-center gap-2 ${category === 'account' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
             >
               <Save size={16} />
               {initialData ? '保存修改' : '立即创建'}

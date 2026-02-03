@@ -63,10 +63,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ resources, onOpenAddModal
   // Stats (Use original resources for stats, not filtered)
   const urgentCount = resources.filter(r => {
     const days = getDaysRemaining(r.expiryDate);
-    return days <= 30 && days >= 0;
+    return days !== null && days <= 30 && days >= 0;
   }).length;
   
-  const expiredCount = resources.filter(r => getDaysRemaining(r.expiryDate) < 0).length;
+  const expiredCount = resources.filter(r => {
+      const days = getDaysRemaining(r.expiryDate);
+      return days !== null && days < 0;
+  }).length;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
@@ -164,7 +167,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ resources, onOpenAddModal
               </div>
             )}
             {viewMode === 'heatmap' && <HeatmapView resources={resources} />} 
-            {/* Heatmap usually shows all data, or we can filter it too. Here I kept it showing all for context, but you can change to processedResources */}
           </>
         )}
       </div>

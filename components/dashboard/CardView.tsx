@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Server, Globe, Edit2, Smartphone } from 'lucide-react';
+import { Server, Globe, Edit2, Smartphone, Key, StickyNote } from 'lucide-react';
 import { Resource, ResourceType } from '../../types';
 import { getDaysRemaining, getStatusStyles } from '../../utils/resourceUtils';
 
@@ -15,6 +15,7 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
       case ResourceType.VPS: return <Server size={18} />;
       case ResourceType.DOMAIN: return <Globe size={18} />;
       case ResourceType.PHONE_NUMBER: return <Smartphone size={18} />;
+      case ResourceType.ACCOUNT: return <Key size={18} />;
       default: return <Server size={18} />;
     }
   };
@@ -24,6 +25,7 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
       case ResourceType.VPS: return 'bg-black text-white';
       case ResourceType.DOMAIN: return 'bg-indigo-100 text-indigo-600';
       case ResourceType.PHONE_NUMBER: return 'bg-teal-100 text-teal-600';
+      case ResourceType.ACCOUNT: return 'bg-amber-100 text-amber-600';
       default: return 'bg-black text-white';
     }
   };
@@ -33,7 +35,8 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
       {resources.map((item) => {
         const days = getDaysRemaining(item.expiryDate);
         const style = getStatusStyles(days);
-        const isExpired = days < 0;
+        const isExpired = days !== null && days < 0;
+        const isLifetime = days === null;
 
         return (
           <div 
@@ -62,12 +65,12 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
             <div className="mb-8">
               <div className="flex items-baseline gap-1">
                 <span className={`text-5xl font-bold tracking-tighter ${isExpired ? 'text-slate-400' : 'text-slate-900'}`}>
-                  {isExpired ? 'Exp' : days}
+                  {isLifetime ? '∞' : (isExpired ? 'Exp' : days)}
                 </span>
-                {!isExpired && <span className="text-sm font-medium text-slate-400">天</span>}
+                {!isExpired && !isLifetime && <span className="text-sm font-medium text-slate-400">天</span>}
               </div>
               <p className={`text-sm font-medium mt-1 ${isExpired ? 'text-red-500' : 'text-slate-400'}`}>
-                {isExpired ? `已过期 ${Math.abs(days)} 天` : '剩余有效期'}
+                {isExpired ? `已过期 ${Math.abs(days || 0)} 天` : isLifetime ? '长期有效' : '剩余有效期'}
               </p>
             </div>
 
@@ -75,7 +78,10 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
             <div className="flex justify-between items-end">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-0.5">{item.provider}</p>
-                <p className="font-semibold text-slate-700 truncate max-w-[120px]" title={item.name}>{item.name}</p>
+                <div className="flex items-center gap-1.5">
+                   <p className="font-semibold text-slate-700 truncate max-w-[120px]" title={item.name}>{item.name}</p>
+                   {item.notes && <StickyNote size={12} className="text-slate-300" />}
+                </div>
               </div>
               <div className="text-right">
                  <p className="text-sm font-mono font-medium text-slate-500">{item.currency}{item.cost}<span className="text-xs opacity-50">/y</span></p>
@@ -84,10 +90,12 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
 
             {/* Progress Bar Decor */}
             <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-slate-100">
-               <div 
-                  className={`h-full ${days <= 7 ? 'bg-rose-500' : days <= 30 ? 'bg-amber-400' : 'bg-indigo-500'}`} 
-                  style={{ width: `${Math.max(5, Math.min(100, (365 - days) / 365 * 100))}%` }}
-               />
+               {days !== null && (
+                 <div 
+                    className={`h-full ${days <= 7 ? 'bg-rose-500' : days <= 30 ? 'bg-amber-400' : 'bg-indigo-500'}`} 
+                    style={{ width: `${Math.max(5, Math.min(100, (365 - days) / 365 * 100))}%` }}
+                 />
+               )}
             </div>
           </div>
         );

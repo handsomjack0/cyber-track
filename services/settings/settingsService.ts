@@ -1,8 +1,7 @@
 
 import { AppSettings } from '../../types';
 
-const STORAGE_KEY = 'cloudtrack_settings';
-
+// Fallback default in case API fails or loading
 const DEFAULT_SETTINGS: AppSettings = {
   reminderDays: 7,
   telegram: {
@@ -19,21 +18,36 @@ const DEFAULT_SETTINGS: AppSettings = {
   },
 };
 
-export const getSettings = (): AppSettings => {
-  if (typeof window === 'undefined') return DEFAULT_SETTINGS;
-  
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return DEFAULT_SETTINGS;
+const API_SECRET = 'demo-secret'; 
+const headers = {
+  'Content-Type': 'application/json',
+  'x-api-key': API_SECRET
+};
 
+export const getSettings = async (): Promise<AppSettings> => {
   try {
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
-  } catch (e) {
-    console.error('Failed to parse settings', e);
-    return DEFAULT_SETTINGS;
+    const res = await fetch('/api/v1/settings', { headers });
+    if (!res.ok) throw new Error('Failed to fetch settings');
+    return await res.json();
+  } catch (error) {
+    console.error('Settings fetch error:', error);
+    // Fallback to local storage if API fails (offline mode support)
+    const stored = localStorage.getItem('cloudtrack_settings');
+    return stored ? JSON.parse(stored) : DEFAULT_SETTINGS;
   }
 };
 
-export const saveSettings = (settings: AppSettings): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+export const saveSettings = async (settings: AppSettings): Promise<void> => {
+  // Optimistic update for local fallback
+  localStorage.setItem('cloudtrack_settings', JSON.stringify(settings));
+
+  try {
+    await fetch('/api/v1/settings', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(settings)
+    });
+  } catch (error) {
+    console.error('Settings save error:', error);
+  }
 };
