@@ -1,5 +1,5 @@
 
-import { Env, saveResources, jsonResponse, errorResponse, checkAuth, Resource } from '../../../../utils/storage';
+import { Env, saveResources, jsonResponse, errorResponse, checkAuth, Resource } from '../../../utils/storage';
 
 export const onRequestPost = async (context: { env: Env, request: Request }) => {
   if (!checkAuth(context.request, context.env)) {
