@@ -1,5 +1,5 @@
 
-import { Env, getDb, jsonResponse, errorResponse, checkAuth } from '../../../utils/storage';
+import { Env, getDb, jsonResponse, errorResponse, checkAuth, Resource } from '../../../utils/storage';
 import { resources } from '../../../db/schema';
 
 export const onRequestPost = async (context: { env: Env, request: Request }) => {

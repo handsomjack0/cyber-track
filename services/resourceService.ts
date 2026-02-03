@@ -1,5 +1,5 @@
 
-import { Resource } from '../types';
+import { Resource } from '../types/index';
 
 const API_BASE = '/api/v1/resources';
 const API_BULK = '/api/v1/resources/bulk';

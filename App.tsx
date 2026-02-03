@@ -1,46 +1,32 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import DashboardView from './components/dashboard/DashboardView';
 import AnalyticsView from './components/analytics/AnalyticsView';
 import ResourceListView from './components/views/ResourceListView';
 import AddResourceModal from './components/resources/AddResourceModal';
 import SettingsView from './components/settings/SettingsView';
-import { Resource, ResourceType } from './types';
+import LoadingState from './components/common/LoadingState';
+import { Resource, ResourceType } from './types/index';
 import { ThemeProvider } from './context/ThemeContext';
-import { resourceService } from './services/resourceService';
+import { useResourceManager } from './hooks/useResourceManager';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [resources, setResources] = useState<Resource[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  // Logic separated into custom hook
+  const { resources, isLoading, addResource, updateResource, deleteResource } = useResourceManager();
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
 
-  // Load resources on mount
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      const data = await resourceService.fetchAll();
-      setResources(data);
-      setIsLoading(false);
-    };
-    loadData();
-  }, []);
-
   const handleDelete = async (id: string) => {
-    if (window.confirm('确定要删除这个资源吗？')) {
-      // Optimistic update
-      const original = [...resources];
-      setResources(prev => prev.filter(r => r.id !== id));
-      
+    if (window.confirm('确定要删除这个资源吗？此操作不可恢复。')) {
       try {
-        await resourceService.delete(id);
+        await deleteResource(id);
       } catch (e) {
-        alert('删除失败，数据已回滚');
-        setResources(original);
+        alert('删除操作失败，请重试');
       }
     }
   };
@@ -49,20 +35,16 @@ const App: React.FC = () => {
     const isEdit = resources.some(r => r.id === resourceData.id);
 
     try {
-      let savedResource: Resource;
       if (isEdit) {
-        savedResource = await resourceService.update(resourceData);
-        setResources(prev => prev.map(r => r.id === savedResource.id ? savedResource : r));
+        await updateResource(resourceData);
       } else {
-        savedResource = await resourceService.create(resourceData);
-        setResources(prev => [...prev, savedResource]);
+        await addResource(resourceData);
       }
+      setIsModalOpen(false);
+      setEditingResource(null);
     } catch (e) {
-      console.error(e);
-      alert('保存失败');
+      alert('保存失败，请检查网络连接');
     }
-
-    setEditingResource(null);
   };
 
   const openAddModal = () => {
@@ -77,12 +59,7 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (isLoading) {
-      return (
-        <div className="flex items-center justify-center h-full text-slate-400 gap-2">
-           <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-           加载资源中...
-        </div>
-      );
+      return <LoadingState />;
     }
 
     switch (activeTab) {
@@ -155,7 +132,7 @@ const App: React.FC = () => {
         return (
           <DashboardView 
             resources={resources} 
-            onOpenAddModal={openAddModal}
+            onOpenAddModal={openAddModal} 
             onEditResource={openEditModal}
             onDeleteResource={handleDelete}
           />
@@ -168,7 +145,7 @@ const App: React.FC = () => {
       <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         
-        <main className="flex-1 p-6 lg:p-10 overflow-y-auto h-screen relative scroll-smooth">
+        <main className="flex-1 p-6 lg:p-10 overflow-y-auto h-screen relative scroll-smooth no-scrollbar">
           {renderContent()}
         </main>
 

@@ -1,5 +1,5 @@
 
-import { Resource } from "../types";
+import { Resource } from "../types/index";
 
 export const analyzePortfolio = async (resources: Resource[]): Promise<string> => {
   try {
