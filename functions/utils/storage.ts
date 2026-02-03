@@ -20,7 +20,7 @@ export interface Resource {
   expiryDate: string;
   cost: number;
   currency: string;
-  type: 'VPS' | 'DOMAIN';
+  type: 'VPS' | 'DOMAIN' | 'PHONE_NUMBER';
   status: string;
   autoRenew: boolean;
 }

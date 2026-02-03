@@ -1,6 +1,8 @@
+
 export enum ResourceType {
   VPS = 'VPS',
-  DOMAIN = 'DOMAIN'
+  DOMAIN = 'DOMAIN',
+  PHONE_NUMBER = 'PHONE_NUMBER'
 }
 
 export enum Status {

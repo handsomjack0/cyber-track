@@ -23,6 +23,11 @@ export const onRequestPost = async (context: { env: Env, request: Request }) => 
       return errorResponse('Missing required fields: name, expiryDate');
     }
 
+    // Determine type safely
+    let type: Resource['type'] = 'VPS';
+    if (body.type === 'DOMAIN') type = 'DOMAIN';
+    if (body.type === 'PHONE_NUMBER') type = 'PHONE_NUMBER';
+
     const newResource: Resource = {
       id: body.id || Date.now().toString(),
       name: body.name,
@@ -30,7 +35,7 @@ export const onRequestPost = async (context: { env: Env, request: Request }) => 
       expiryDate: body.expiryDate,
       cost: body.cost || 0,
       currency: body.currency || '$',
-      type: (body.type === 'DOMAIN' ? 'DOMAIN' : 'VPS'),
+      type: type,
       status: 'Active', // Default status
       autoRenew: body.autoRenew || false
     };

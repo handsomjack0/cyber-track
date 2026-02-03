@@ -158,7 +158,7 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
             <div className={activeTab === 'basic' ? 'block' : 'hidden'}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">名称 / 域名</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">名称 / 域名 / 号码</label>
                   <input
                     required
                     type="text"
@@ -190,6 +190,7 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
                     >
                       <option value={ResourceType.VPS}>VPS 主机</option>
                       <option value={ResourceType.DOMAIN}>域名</option>
+                      <option value={ResourceType.PHONE_NUMBER}>手机号码</option>
                     </select>
                   </div>
                 </div>

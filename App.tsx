@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import DashboardView from './components/dashboard/DashboardView';
 import AnalyticsView from './components/analytics/AnalyticsView';
-import ResourceTable from './components/resources/ResourceTable';
+import ResourceListView from './components/views/ResourceListView';
 import AddResourceModal from './components/resources/AddResourceModal';
 import SettingsView from './components/settings/SettingsView';
 import { Resource, ResourceType } from './types';
@@ -46,10 +46,6 @@ const App: React.FC = () => {
   };
 
   const handleSaveResource = async (resourceData: Resource) => {
-    // Determine if it's an edit or add based on if we have editingResource or ID existence
-    // Ideally the modal returns the full object.
-    
-    // Optimistic UI update requires knowing if it's new or existing
     const isEdit = resources.some(r => r.id === resourceData.id);
 
     try {
@@ -58,17 +54,12 @@ const App: React.FC = () => {
         savedResource = await resourceService.update(resourceData);
         setResources(prev => prev.map(r => r.id === savedResource.id ? savedResource : r));
       } else {
-        // For new resources, the ID might be temp, backend generates one or confirms it
-        // But our current backend trusts client ID or generates one.
-        // Let's assume we pass the data without ID for create if it was purely backend gen,
-        // but here we used Date.now() in modal.
         savedResource = await resourceService.create(resourceData);
         setResources(prev => [...prev, savedResource]);
       }
     } catch (e) {
       console.error(e);
       alert('保存失败');
-      // In a real app, we would reload data here
     }
 
     setEditingResource(null);
@@ -108,51 +99,42 @@ const App: React.FC = () => {
         return <AnalyticsView resources={resources} />;
       case 'vps':
         return (
-          <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
-             <div className="flex justify-between items-end">
-                <div>
-                   <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">VPS 实例</h1>
-                   <p className="text-slate-500 dark:text-slate-400 mt-1">管理所有虚拟主机和云服务器</p>
-                </div>
-                <button 
-                  onClick={openAddModal}
-                  className="bg-black dark:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors"
-                >
-                  添加 VPS
-                </button>
-             </div>
-             <ResourceTable 
-                title="VPS List" 
-                resources={resources.filter(r => r.type === ResourceType.VPS)} 
-                onDelete={handleDelete}
-                onEdit={openEditModal}
-                hideHeader
-              />
-          </div>
+          <ResourceListView 
+            title="VPS 实例" 
+            subtitle="管理所有虚拟主机和云服务器"
+            resources={resources}
+            resourceType={ResourceType.VPS}
+            onAdd={openAddModal}
+            onEdit={openEditModal}
+            onDelete={handleDelete}
+            addButtonLabel="添加 VPS"
+          />
         );
       case 'domains':
         return (
-          <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
-             <div className="flex justify-between items-end">
-                <div>
-                   <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">域名资产</h1>
-                   <p className="text-slate-500 dark:text-slate-400 mt-1">监控域名有效期及 SSL 证书</p>
-                </div>
-                <button 
-                  onClick={openAddModal}
-                  className="bg-black dark:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors"
-                >
-                  添加域名
-                </button>
-             </div>
-             <ResourceTable 
-                title="Domain List" 
-                resources={resources.filter(r => r.type === ResourceType.DOMAIN)} 
-                onDelete={handleDelete}
-                onEdit={openEditModal}
-                hideHeader
-              />
-          </div>
+          <ResourceListView 
+            title="域名资产" 
+            subtitle="监控域名有效期及 SSL 证书"
+            resources={resources}
+            resourceType={ResourceType.DOMAIN}
+            onAdd={openAddModal}
+            onEdit={openEditModal}
+            onDelete={handleDelete}
+            addButtonLabel="添加域名"
+          />
+        );
+      case 'cellphones':
+        return (
+          <ResourceListView 
+            title="手机号码" 
+            subtitle="管理手机号码有效期及保号套餐"
+            resources={resources}
+            resourceType={ResourceType.PHONE_NUMBER}
+            onAdd={openAddModal}
+            onEdit={openEditModal}
+            onDelete={handleDelete}
+            addButtonLabel="添加号码"
+          />
         );
       case 'settings':
         return <SettingsView />;

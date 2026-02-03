@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Calendar } from 'lucide-react';
 import { Resource, ResourceType } from '../../types';
@@ -24,6 +25,15 @@ const HeatmapView: React.FC<HeatmapViewProps> = ({ resources }) => {
   for (let i = 0; i < weeks * days; i++) {
      grid.push(i);
   }
+
+  const getDotColor = (type: ResourceType) => {
+    switch (type) {
+      case ResourceType.VPS: return 'bg-blue-400';
+      case ResourceType.DOMAIN: return 'bg-purple-400';
+      case ResourceType.PHONE_NUMBER: return 'bg-teal-400';
+      default: return 'bg-slate-400';
+    }
+  };
 
   return (
     <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm animate-fade-in overflow-x-auto">
@@ -55,7 +65,7 @@ const HeatmapView: React.FC<HeatmapViewProps> = ({ resources }) => {
                     </div>
                     {expiringItems.map(r => (
                       <div key={r.id} className="flex items-center gap-2 text-slate-300">
-                        <span className={`w-1.5 h-1.5 rounded-full ${r.type === ResourceType.VPS ? 'bg-blue-400' : 'bg-purple-400'}`}></span>
+                        <span className={`w-1.5 h-1.5 rounded-full ${getDotColor(r.type)}`}></span>
                         {r.name}
                       </div>
                     ))}

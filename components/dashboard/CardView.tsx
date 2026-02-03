@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Server, Globe, Edit2 } from 'lucide-react';
+import { Server, Globe, Edit2, Smartphone } from 'lucide-react';
 import { Resource, ResourceType } from '../../types';
 import { getDaysRemaining, getStatusStyles } from '../../utils/resourceUtils';
 
@@ -9,6 +10,24 @@ interface CardViewProps {
 }
 
 const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
+  const getIcon = (type: ResourceType) => {
+    switch (type) {
+      case ResourceType.VPS: return <Server size={18} />;
+      case ResourceType.DOMAIN: return <Globe size={18} />;
+      case ResourceType.PHONE_NUMBER: return <Smartphone size={18} />;
+      default: return <Server size={18} />;
+    }
+  };
+
+  const getIconClass = (type: ResourceType) => {
+    switch (type) {
+      case ResourceType.VPS: return 'bg-black text-white';
+      case ResourceType.DOMAIN: return 'bg-indigo-100 text-indigo-600';
+      case ResourceType.PHONE_NUMBER: return 'bg-teal-100 text-teal-600';
+      default: return 'bg-black text-white';
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
       {resources.map((item) => {
@@ -33,8 +52,8 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
 
             {/* Header */}
             <div className="flex justify-between items-start mb-6">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${item.type === ResourceType.VPS ? 'bg-black text-white' : 'bg-indigo-100 text-indigo-600'}`}>
-                {item.type === ResourceType.VPS ? <Server size={18} /> : <Globe size={18} />}
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${getIconClass(item.type)}`}>
+                {getIcon(item.type)}
               </div>
               <div className={`w-2.5 h-2.5 rounded-full ${style.dot} shadow-sm ring-4 ring-white/50`} />
             </div>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Resource, ResourceType, SortConfig, SortField } from '../../types';
-import { Server, Globe, Trash2, Edit2, ArrowUp, ArrowDown, Bell, BellOff } from 'lucide-react';
+import { Server, Globe, Trash2, Edit2, ArrowUp, ArrowDown, Bell, BellOff, Smartphone } from 'lucide-react';
 import { getDaysRemaining, getStatusStyles } from '../../utils/resourceUtils';
 
 interface ResourceTableProps {
@@ -34,6 +34,24 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
         }
       </span>
     );
+  };
+
+  const getResourceIcon = (type: ResourceType) => {
+    switch(type) {
+      case ResourceType.VPS: return <Server size={16} />;
+      case ResourceType.DOMAIN: return <Globe size={16} />;
+      case ResourceType.PHONE_NUMBER: return <Smartphone size={16} />;
+      default: return <Server size={16} />;
+    }
+  };
+
+  const getResourceIconClass = (type: ResourceType) => {
+    switch(type) {
+      case ResourceType.VPS: return 'bg-slate-100 text-slate-600';
+      case ResourceType.DOMAIN: return 'bg-indigo-50 text-indigo-600';
+      case ResourceType.PHONE_NUMBER: return 'bg-teal-50 text-teal-600';
+      default: return 'bg-slate-100 text-slate-600';
+    }
   };
 
   const SortableHeader = ({ field, label, align = 'left' }: { field: SortField, label: string, align?: 'left' | 'right' }) => {
@@ -134,8 +152,8 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
                   <tr key={resource.id} className="group hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg shrink-0 ${resource.type === ResourceType.VPS ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-600'}`}>
-                          {resource.type === ResourceType.VPS ? <Server size={16} /> : <Globe size={16} />}
+                        <div className={`p-2 rounded-lg shrink-0 ${getResourceIconClass(resource.type)}`}>
+                          {getResourceIcon(resource.type)}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">

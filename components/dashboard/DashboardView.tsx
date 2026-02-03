@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Resource, SortConfig, SortField } from '../../types';
-import { List, Grid, Calendar, AlertCircle, HardDrive, Globe2, ShieldAlert } from 'lucide-react';
+import { List, Grid, Calendar, AlertCircle } from 'lucide-react';
 import ResourceTable from '../resources/ResourceTable';
 import CardView from './CardView';
 import HeatmapView from './HeatmapView';
@@ -52,107 +52,70 @@ const DashboardView: React.FC<DashboardViewProps> = ({ resources, onOpenAddModal
   }).length;
   
   const expiredCount = resources.filter(r => getDaysRemaining(r.expiryDate) < 0).length;
-  const vpsCount = resources.filter(r => r.type === 'VPS').length;
-  const domainCount = resources.filter(r => r.type === 'DOMAIN').length;
-
-  const StatCard = ({ label, value, icon: Icon, colorClass, borderClass }: any) => (
-    <div className={`bg-white dark:bg-slate-900 p-5 rounded-2xl border ${borderClass} shadow-sm flex items-center gap-4 transition-transform hover:-translate-y-1`}>
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colorClass}`}>
-        <Icon size={24} />
-      </div>
-      <div>
-        <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">{label}</p>
-        <p className="text-2xl font-bold text-slate-900 dark:text-white font-mono mt-0.5">{value}</p>
-      </div>
-    </div>
-  );
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
       
-      {/* Header & Stats */}
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-             <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">资产概览</h1>
-             <p className="text-slate-500 dark:text-slate-400 mt-1">欢迎回来，这是您的基础设施运行状态。</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button 
-                onClick={onOpenAddModal}
-                className="px-4 py-2 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/30 transition-all active:scale-95"
-              >
-                + 新增资产
-            </button>
+      {/* Hero Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-2">资产概览</h1>
+          <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
+            <span className="flex items-center gap-1.5">
+               <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></span> 
+               总资产: <span className="font-mono font-medium text-slate-700 dark:text-slate-300">{resources.length}</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+               <span className={`w-2 h-2 rounded-full ${urgentCount > 0 ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`}></span>
+               紧急: <span className="font-mono font-medium text-slate-700 dark:text-slate-300">{urgentCount}</span>
+            </span>
+            {expiredCount > 0 && (
+              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-full text-xs font-semibold">
+                <AlertCircle size={12} /> {expiredCount} 已过期
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Enhanced Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard 
-            label="VPS 实例" 
-            value={vpsCount} 
-            icon={HardDrive} 
-            colorClass="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-            borderClass="border-slate-100 dark:border-slate-800"
-          />
-          <StatCard 
-            label="域名资产" 
-            value={domainCount} 
-            icon={Globe2} 
-            colorClass="bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400"
-            borderClass="border-slate-100 dark:border-slate-800"
-          />
-          <StatCard 
-            label="30天内到期" 
-            value={urgentCount} 
-            icon={AlertCircle} 
-            colorClass={`${urgentCount > 0 ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'}`}
-            borderClass="border-slate-100 dark:border-slate-800"
-          />
-          <StatCard 
-            label="已过期" 
-            value={expiredCount} 
-            icon={ShieldAlert} 
-            colorClass={`${expiredCount > 0 ? 'bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400' : 'bg-slate-50 text-slate-400 dark:bg-slate-800 dark:text-slate-500'}`}
-            borderClass="border-slate-100 dark:border-slate-800"
-          />
-        </div>
-      </div>
-
-      {/* Controls Toolbar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
-        <div className="px-2">
+        {/* View Switcher & Controls */}
+        <div className="flex items-center gap-3">
+          
           <SortControl 
             sortConfig={sortConfig} 
-            onSortChange={handleSortChange}
+            onSortChange={handleSortChange} 
             onDirectionToggle={handleDirectionToggle}
           />
-        </div>
 
-        {/* View Switcher */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-          <button 
-            onClick={() => setViewMode('card')}
-            className={`p-2 rounded-lg transition-all ${viewMode === 'card' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-            title="卡片视图"
-          >
-            <Grid size={18} />
-          </button>
-          <button 
-            onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-            title="列表视图"
-          >
-            <List size={18} />
-          </button>
-          <button 
-            onClick={() => setViewMode('heatmap')}
-            className={`p-2 rounded-lg transition-all ${viewMode === 'heatmap' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-            title="日历热力图"
-          >
-            <Calendar size={18} />
-          </button>
+          <div className="bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center">
+            <button 
+              onClick={() => setViewMode('card')}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'card' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+              title="卡片视图"
+            >
+              <Grid size={18} />
+            </button>
+            <button 
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+              title="列表视图"
+            >
+              <List size={18} />
+            </button>
+            <button 
+              onClick={() => setViewMode('heatmap')}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'heatmap' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+              title="日历热力图"
+            >
+              <Calendar size={18} />
+            </button>
+            <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-2"></div>
+            <button 
+              onClick={onOpenAddModal}
+              className="px-3 py-1.5 text-sm font-medium bg-slate-900 dark:bg-indigo-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors"
+            >
+              + 新增
+            </button>
+          </div>
         </div>
       </div>
 
@@ -162,17 +125,17 @@ const DashboardView: React.FC<DashboardViewProps> = ({ resources, onOpenAddModal
         {viewMode === 'list' && (
            <div className="animate-fade-in">
               <ResourceTable 
-                resources={sortedResources} 
                 title="资产清单" 
+                resources={sortedResources} 
                 onDelete={onDeleteResource} 
                 onEdit={onEditResource}
-                hideHeader 
+                hideHeader={false}
                 sortConfig={sortConfig}
                 onSort={handleSortChange}
               />
            </div>
         )}
-        {viewMode === 'heatmap' && <HeatmapView resources={sortedResources} />}
+        {viewMode === 'heatmap' && <HeatmapView resources={resources} />}
       </div>
       
     </div>

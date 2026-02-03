@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutGrid, Server, Globe, Settings, Command, PieChart } from 'lucide-react';
+import { LayoutGrid, Server, Globe, Settings, Command, PieChart, Smartphone } from 'lucide-react';
 import ThemeToggle from '../common/ThemeToggle';
 
 interface SidebarProps {
@@ -14,6 +14,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
     { id: 'analytics', label: '数据分析', icon: <PieChart size={20} /> },
     { id: 'vps', label: 'VPS 实例', icon: <Server size={20} /> },
     { id: 'domains', label: '域名资产', icon: <Globe size={20} /> },
+    { id: 'cellphones', label: '手机号码', icon: <Smartphone size={20} /> },
     { id: 'settings', label: '全局设置', icon: <Settings size={20} /> },
   ];
 
