@@ -26,7 +26,7 @@ const App: React.FC = () => {
       try {
         await deleteResource(id);
       } catch (e) {
-        alert('删除操作失败，请重试');
+        alert(`删除操作失败: ${e instanceof Error ? e.message : '未知错误'}`);
       }
     }
   };
@@ -43,7 +43,8 @@ const App: React.FC = () => {
       setIsModalOpen(false);
       setEditingResource(null);
     } catch (e) {
-      alert('保存失败，请检查网络连接');
+      alert(`保存失败: ${e instanceof Error ? e.message : '请检查网络连接或数据库配置'}`);
+      console.error(e);
     }
   };
 

@@ -85,6 +85,7 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
       status: initialData?.status || Status.ACTIVE, 
       autoRenew: data.autoRenew || false,
       notes: data.notes,
+      tags: data.tags || [], // Ensure tags are included
       notificationSettings: {
         enabled: notifySettings.enabled,
         useGlobal: notifySettings.useGlobal,

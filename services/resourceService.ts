@@ -30,8 +30,8 @@ export const resourceService = {
       headers,
       body: JSON.stringify(resource)
     });
-    if (!res.ok) throw new Error('Failed to create');
     const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to create resource');
     return json.data;
   },
 
@@ -41,8 +41,8 @@ export const resourceService = {
       headers,
       body: JSON.stringify(resource)
     });
-    if (!res.ok) throw new Error('Failed to update');
     const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to update resource');
     return json.data;
   },
 
@@ -51,6 +51,10 @@ export const resourceService = {
       method: 'DELETE',
       headers
     });
+    if (!res.ok) {
+       const json = await res.json();
+       throw new Error(json.error || 'Failed to delete');
+    }
     return res.ok;
   },
 
@@ -61,7 +65,8 @@ export const resourceService = {
         headers,
         body: JSON.stringify({ resources, mode: 'overwrite' })
       });
-      if (!res.ok) throw new Error('Import failed');
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Import failed');
       return true;
     } catch (e) {
       console.error(e);
