@@ -1,36 +1,60 @@
 
-import { Env, getResources, saveResources, jsonResponse, errorResponse, checkAuth, Resource } from '../../../utils/storage';
+import { Env, getDb, jsonResponse, errorResponse, checkAuth } from '../../../utils/storage';
+import { resources } from '../../../db/schema';
+import { eq } from 'drizzle-orm';
 
 export const onRequestGet = async (context: { env: Env, request: Request, params: { id: string } }) => {
   if (!checkAuth(context.request, context.env)) return errorResponse('Unauthorized', 401);
 
   const id = context.params.id;
-  const resources = await getResources(context.env);
-  const resource = resources.find(r => r.id === id);
+  const db = getDb(context.env);
+  
+  const result = await db.select().from(resources).where(eq(resources.id, id)).get();
 
-  if (!resource) return errorResponse('Resource not found', 404);
+  if (!result) return errorResponse('Resource not found', 404);
 
-  return jsonResponse({ success: true, data: resource });
+  return jsonResponse({ success: true, data: result });
 };
 
 export const onRequestPut = async (context: { env: Env, request: Request, params: { id: string } }) => {
   if (!checkAuth(context.request, context.env)) return errorResponse('Unauthorized', 401);
 
   const id = context.params.id;
-  const resources = await getResources(context.env);
-  const index = resources.findIndex(r => r.id === id);
-
-  if (index === -1) return errorResponse('Resource not found', 404);
-
+  
   try {
-    const body = await context.request.json() as Partial<Resource>;
-    // Merge existing with updates
-    resources[index] = { ...resources[index], ...body, id }; // Ensure ID doesn't change
-    
-    await saveResources(context.env, resources);
-    return jsonResponse({ success: true, data: resources[index] });
+    const body = await context.request.json() as any;
+    const db = getDb(context.env);
+
+    // Update only fields that are passed, but ensure ID is preserved
+    // Drizzle's update().set() handles partial updates well
+    const updateData = {
+      name: body.name,
+      provider: body.provider,
+      expiryDate: body.expiryDate,
+      startDate: body.startDate,
+      cost: body.cost,
+      currency: body.currency,
+      type: body.type,
+      billingCycle: body.billingCycle,
+      autoRenew: body.autoRenew,
+      notes: body.notes,
+      notificationSettings: body.notificationSettings
+    };
+
+    // Remove undefined keys so we don't overwrite with null unless intended
+    Object.keys(updateData).forEach(key => (updateData as any)[key] === undefined && delete (updateData as any)[key]);
+
+    const result = await db.update(resources)
+      .set(updateData)
+      .where(eq(resources.id, id))
+      .returning()
+      .get();
+
+    if (!result) return errorResponse('Resource not found or update failed', 404);
+
+    return jsonResponse({ success: true, data: result });
   } catch (e) {
-    return errorResponse('Invalid JSON body');
+    return errorResponse(`Update failed: ${String(e)}`);
   }
 };
 
@@ -38,13 +62,17 @@ export const onRequestDelete = async (context: { env: Env, request: Request, par
   if (!checkAuth(context.request, context.env)) return errorResponse('Unauthorized', 401);
 
   const id = context.params.id;
-  const resources = await getResources(context.env);
-  const newResources = resources.filter(r => r.id !== id);
+  const db = getDb(context.env);
 
-  if (newResources.length === resources.length) {
-    return errorResponse('Resource not found', 404);
+  try {
+    const result = await db.delete(resources).where(eq(resources.id, id)).returning().get();
+    
+    if (!result) {
+      return errorResponse('Resource not found', 404);
+    }
+
+    return jsonResponse({ success: true, message: 'Resource deleted', id });
+  } catch (e) {
+    return errorResponse(`Delete failed: ${String(e)}`);
   }
-
-  await saveResources(context.env, newResources);
-  return jsonResponse({ success: true, message: 'Resource deleted' });
 };

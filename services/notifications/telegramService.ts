@@ -18,7 +18,7 @@ export const sendTelegramTestMessage = async (config: TelegramConfig): Promise<b
       },
       body: JSON.stringify({
         chatId: config.chatId,
-        message: '🔔 <b>CloudTrack</b>: 这是一个测试通知。\n您的配置已成功连接 Cloudflare Pages Functions！'
+        message: '🔔 <b>cyberTrack</b>: 这是一个测试通知。\n您的配置已成功连接 Cloudflare Pages Functions！'
       })
     });
 

@@ -1,22 +1,29 @@
+import { D1Database } from '@cloudflare/workers-types';
+import { drizzle } from 'drizzle-orm/d1';
+import { eq } from 'drizzle-orm';
+import * as schema from '../db/schema';
 
-// Define minimal KVNamespace interface to avoid type errors when global types are missing
+// Minimal KV interface for legacy support
 export interface KVNamespace {
-  get(key: string, options?: { type?: 'text' | 'json' | 'arrayBuffer' | 'stream'; cacheTtl?: number }): Promise<string | null>;
-  put(key: string, value: string | ReadableStream | ArrayBuffer, options?: { expiration?: number; expirationTtl?: number; metadata?: any }): Promise<void>;
-  delete(key: string): Promise<void>;
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
 }
 
 export interface Env {
-  CLOUDTRACK_KV: KVNamespace;
+  DB: D1Database; 
+  CLOUDTRACK_KV?: KVNamespace; 
   API_SECRET: string;
   TELEGRAM_BOT_TOKEN?: string;
-  API_KEY?: string;
+  API_KEY?: string; // Gemini API Key
 }
+
+export type ResourceType = 'VPS' | 'DOMAIN' | 'PHONE_NUMBER' | 'ACCOUNT';
 
 export interface ResourceNotificationSettings {
   enabled: boolean;
   useGlobal: boolean;
   reminderDays?: number;
+  lastNotified?: string; // ISO Date String YYYY-MM-DD
   channels?: {
     telegram: boolean;
     email: boolean;
@@ -24,22 +31,20 @@ export interface ResourceNotificationSettings {
   };
 }
 
-export type ResourceType = 'VPS' | 'DOMAIN' | 'PHONE_NUMBER' | 'ACCOUNT';
-
 export interface Resource {
   id: string;
   name: string;
   provider: string;
-  expiryDate?: string;
+  expiryDate?: string | null;
+  startDate?: string | null;
   cost: number;
   currency: string;
-  type: ResourceType;
+  type: string; 
   status: string;
   autoRenew: boolean;
-  startDate?: string;
-  billingCycle?: 'Monthly' | 'Yearly' | 'OneTime' | 'Quarterly';
-  notes?: string;
-  notificationSettings?: ResourceNotificationSettings;
+  billingCycle?: string | null;
+  notes?: string | null;
+  notificationSettings?: ResourceNotificationSettings | null;
 }
 
 export interface AppSettings {
@@ -58,41 +63,9 @@ export interface AppSettings {
   };
 }
 
-const DB_KEY = 'resources_data';
-const SETTINGS_KEY = 'app_settings';
-
-// Empty initial data
-const INITIAL_DATA: Resource[] = [];
-const DEFAULT_SETTINGS: AppSettings = {
-  reminderDays: 7,
-  telegram: { enabled: false, chatId: '' },
-  email: { enabled: false, email: '' },
-  webhook: { enabled: false, url: '' }
-};
-
-export async function getResources(env: Env): Promise<Resource[]> {
-  if (!env.CLOUDTRACK_KV) return INITIAL_DATA;
-  const data = await env.CLOUDTRACK_KV.get(DB_KEY);
-  if (!data) return INITIAL_DATA;
-  return JSON.parse(data);
-}
-
-export async function saveResources(env: Env, resources: Resource[]): Promise<void> {
-  if (!env.CLOUDTRACK_KV) return;
-  await env.CLOUDTRACK_KV.put(DB_KEY, JSON.stringify(resources));
-}
-
-export async function getSettings(env: Env): Promise<AppSettings> {
-  if (!env.CLOUDTRACK_KV) return DEFAULT_SETTINGS;
-  const data = await env.CLOUDTRACK_KV.get(SETTINGS_KEY);
-  if (!data) return DEFAULT_SETTINGS;
-  // Merge with default to ensure new fields exist
-  return { ...DEFAULT_SETTINGS, ...JSON.parse(data) };
-}
-
-export async function saveSettings(env: Env, settings: AppSettings): Promise<void> {
-  if (!env.CLOUDTRACK_KV) return;
-  await env.CLOUDTRACK_KV.put(SETTINGS_KEY, JSON.stringify(settings));
+// Helper to initialize Drizzle
+export function getDb(env: Env) {
+  return drizzle(env.DB, { schema });
 }
 
 export function jsonResponse(data: any, status = 200) {
@@ -113,4 +86,31 @@ export function checkAuth(request: Request, env: Env): boolean {
   const apiKey = request.headers.get('x-api-key');
   if (!env.API_SECRET) return true; 
   return apiKey === env.API_SECRET;
+}
+
+export async function getSettings(env: Env): Promise<AppSettings> {
+  const db = getDb(env);
+  const result = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
+  
+  if (result) {
+    return {
+      reminderDays: result.reminderDays,
+      telegram: result.telegram,
+      email: result.email,
+      webhook: result.webhook
+    };
+  }
+  
+  return {
+    reminderDays: 7,
+    telegram: { enabled: false, chatId: '' },
+    email: { enabled: false, email: '' },
+    webhook: { enabled: false, url: '' }
+  };
+}
+
+export async function getResources(env: Env): Promise<Resource[]> {
+  const db = getDb(env);
+  const result = await db.select().from(schema.resources).all();
+  return result as unknown as Resource[];
 }

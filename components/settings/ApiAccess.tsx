@@ -24,7 +24,7 @@ const ApiAccess: React.FC = () => {
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">API 集成中心</h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">
-            使用 RESTful API 将 CloudTrack 集成到您的 CI/CD 或监控系统中。
+            使用 RESTful API 将 cyberTrack 集成到您的 CI/CD 或监控系统中。
           </p>
         </div>
       </div>

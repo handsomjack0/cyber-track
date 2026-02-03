@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
         <div className="w-8 h-8 bg-slate-900 dark:bg-indigo-600 text-white rounded-lg flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/20">
           <Command size={18} />
         </div>
-        <span className="font-bold text-lg tracking-tight hidden lg:block text-slate-900 dark:text-white">CloudTrack</span>
+        <span className="font-bold text-lg tracking-tight hidden lg:block text-slate-900 dark:text-white">cyberTrack</span>
       </div>
 
       <nav className="flex-1 px-3 space-y-1 mt-4">

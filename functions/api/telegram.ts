@@ -29,7 +29,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       return new Response(JSON.stringify({ ok: false, description: "Missing chatId" }), { status: 400 });
     }
 
-    const text = message || '🔔 CloudTrack: 这是一个测试通知。\n您的配置已成功连接！(来自 Cloudflare Functions)';
+    const text = message || '🔔 cyberTrack: 这是一个测试通知。\n您的配置已成功连接！(来自 Cloudflare Functions)';
 
     // Use the shared client function
     const result = await sendMessage(env.TELEGRAM_BOT_TOKEN, {
