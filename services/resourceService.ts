@@ -2,6 +2,7 @@
 import { Resource } from '../types';
 
 const API_BASE = '/api/v1/resources';
+const API_BULK = '/api/v1/resources/bulk';
 // Note: In production, this secret should be handled via a proper auth context
 const API_SECRET = 'demo-secret'; 
 
@@ -51,5 +52,20 @@ export const resourceService = {
       headers
     });
     return res.ok;
+  },
+
+  importData: async (resources: Resource[]): Promise<boolean> => {
+    try {
+      const res = await fetch(API_BULK, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ resources, mode: 'overwrite' })
+      });
+      if (!res.ok) throw new Error('Import failed');
+      return true;
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
   }
 };

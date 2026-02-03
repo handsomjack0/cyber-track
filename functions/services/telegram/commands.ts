@@ -13,10 +13,20 @@ const getDaysRemaining = (expiryDate: string) => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
+// Helper: Get Icon by Type
+const getResourceIcon = (type: string) => {
+  switch (type) {
+    case 'VPS': return '🖥️';
+    case 'DOMAIN': return '🌐';
+    case 'PHONE_NUMBER': return '📱';
+    default: return '📦';
+  }
+};
+
 // Command: /start
 async function handleStart(env: Env, chatId: number) {
   const text = `👋 <b>欢迎使用 CloudTrack 资产助手!</b>\n\n` +
-               `我是您的服务器与域名管家。您可以发送以下指令来查询状态：\n\n` +
+               `我是您的服务器、域名与号码管家。您可以发送以下指令来查询状态：\n\n` +
                `🔹 /status - 查看整体健康概览\n` +
                `🔹 /expiring - 查看即将过期的资产\n` +
                `🔹 /list - 列出所有资产 (Top 10)\n` + 
@@ -75,9 +85,10 @@ async function handleExpiring(env: Env, chatId: number, resources: Resource[]) {
   urgentList.forEach(item => {
     const days = getDaysRemaining(item.expiryDate);
     const icon = days < 0 ? '🔴' : '🟠';
+    const typeIcon = getResourceIcon(item.type);
     const statusText = days < 0 ? `已过期 ${Math.abs(days)} 天` : `剩余 ${days} 天`;
     
-    text += `${icon} <b>${item.name}</b> (${item.provider})\n` +
+    text += `${icon} ${typeIcon} <b>${item.name}</b> (${item.provider})\n` +
             `   └ 📅 ${item.expiryDate} (<b>${statusText}</b>)\n\n`;
   });
 
@@ -100,7 +111,7 @@ async function handleList(env: Env, chatId: number, resources: Resource[]) {
   top10.forEach(item => {
     const days = getDaysRemaining(item.expiryDate);
     const icon = days < 0 ? '🔴' : days <= 30 ? '🟠' : '🟢';
-    const typeIcon = item.type === 'VPS' ? '🖥️' : '🌐';
+    const typeIcon = getResourceIcon(item.type);
     
     text += `${icon} ${typeIcon} <b>${item.name}</b>\n` +
             `   💰 ${item.currency}${item.cost} | 📅 ${item.expiryDate}\n`;

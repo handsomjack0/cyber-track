@@ -22,15 +22,15 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     const ai = new GoogleGenAI({ apiKey: env.API_KEY });
 
     const prompt = `
-      You are a System Administrator Advisor. Analyze the following JSON list of VPS and Domain resources.
+      You are a System Administrator and IT Asset Advisor. Analyze the following JSON list of resources which includes VPS (Servers), Domains, and Phone Numbers (e.g., SIM cards, VoIP numbers).
       
       Data:
       ${JSON.stringify(resources)}
 
       Please provide a concise summary report in Markdown format covering:
-      1. **Urgent Alerts**: Any items expiring in the next 30 days.
-      2. **Cost Analysis**: Total monthly/yearly projection.
-      3. **Optimization Tips**: Suggestions on consolidation or renewal strategies.
+      1. **Urgent Alerts**: Any items (including phone numbers) expiring in the next 30 days.
+      2. **Cost Analysis**: Total monthly/yearly projection, broken down by resource type if possible.
+      3. **Optimization Tips**: Suggestions on consolidation, renewal strategies, or cancelling unused low-value assets.
       
       Keep the tone professional and helpful.
     `;

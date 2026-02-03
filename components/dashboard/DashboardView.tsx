@@ -6,6 +6,7 @@ import ResourceTable from '../resources/ResourceTable';
 import CardView from './CardView';
 import HeatmapView from './HeatmapView';
 import SortControl from '../common/SortControl';
+import SearchInput from '../common/SearchInput';
 import { getDaysRemaining } from '../../utils/resourceUtils';
 import { sortResources } from '../../utils/sortUtils';
 
@@ -20,15 +21,29 @@ type ViewMode = 'card' | 'list' | 'heatmap';
 
 const DashboardView: React.FC<DashboardViewProps> = ({ resources, onOpenAddModal, onEditResource, onDeleteResource }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('card');
+  const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     field: 'expiryDate',
     direction: 'asc',
   });
 
-  // Calculate sorted resources
-  const sortedResources = useMemo(() => {
-    return sortResources(resources, sortConfig);
-  }, [resources, sortConfig]);
+  // Filter & Sort Resources
+  const processedResources = useMemo(() => {
+    let result = resources;
+
+    // 1. Filter by Search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(r => 
+        r.name.toLowerCase().includes(query) || 
+        r.provider.toLowerCase().includes(query) ||
+        r.notes?.toLowerCase().includes(query)
+      );
+    }
+
+    // 2. Sort
+    return sortResources(result, sortConfig);
+  }, [resources, searchQuery, sortConfig]);
 
   // Handle Sort Change
   const handleSortChange = (field: SortField) => {
@@ -45,7 +60,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ resources, onOpenAddModal
     }));
   };
 
-  // Stats
+  // Stats (Use original resources for stats, not filtered)
   const urgentCount = resources.filter(r => {
     const days = getDaysRemaining(r.expiryDate);
     return days <= 30 && days >= 0;
@@ -78,64 +93,80 @@ const DashboardView: React.FC<DashboardViewProps> = ({ resources, onOpenAddModal
         </div>
 
         {/* View Switcher & Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full sm:w-auto">
           
-          <SortControl 
-            sortConfig={sortConfig} 
-            onSortChange={handleSortChange} 
-            onDirectionToggle={handleDirectionToggle}
-          />
+          <div className="w-full sm:w-64">
+             <SearchInput value={searchQuery} onChange={setSearchQuery} />
+          </div>
 
-          <div className="bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center">
-            <button 
-              onClick={() => setViewMode('card')}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'card' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-              title="卡片视图"
-            >
-              <Grid size={18} />
-            </button>
-            <button 
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-              title="列表视图"
-            >
-              <List size={18} />
-            </button>
-            <button 
-              onClick={() => setViewMode('heatmap')}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'heatmap' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-              title="日历热力图"
-            >
-              <Calendar size={18} />
-            </button>
-            <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-2"></div>
-            <button 
-              onClick={onOpenAddModal}
-              className="px-3 py-1.5 text-sm font-medium bg-slate-900 dark:bg-indigo-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors"
-            >
-              + 新增
-            </button>
+          <div className="flex items-center gap-3">
+            <SortControl 
+              sortConfig={sortConfig} 
+              onSortChange={handleSortChange} 
+              onDirectionToggle={handleDirectionToggle}
+            />
+
+            <div className="bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center">
+              <button 
+                onClick={() => setViewMode('card')}
+                className={`p-2 rounded-lg transition-all ${viewMode === 'card' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                title="卡片视图"
+              >
+                <Grid size={18} />
+              </button>
+              <button 
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                title="列表视图"
+              >
+                <List size={18} />
+              </button>
+              <button 
+                onClick={() => setViewMode('heatmap')}
+                className={`p-2 rounded-lg transition-all ${viewMode === 'heatmap' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                title="日历热力图"
+              >
+                <Calendar size={18} />
+              </button>
+              <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-2"></div>
+              <button 
+                onClick={onOpenAddModal}
+                className="px-3 py-1.5 text-sm font-medium bg-slate-900 dark:bg-indigo-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors whitespace-nowrap"
+              >
+                + 新增
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* View Content */}
       <div className="min-h-[400px]">
-        {viewMode === 'card' && <CardView resources={sortedResources} onEdit={onEditResource} />}
-        {viewMode === 'list' && (
-           <div className="animate-fade-in">
-              <ResourceTable 
-                title="资产清单" 
-                resources={sortedResources} 
-                onDelete={onDeleteResource} 
-                onEdit={onEditResource}
-                hideHeader={false}
-                sortConfig={sortConfig}
-                onSort={handleSortChange}
-              />
-           </div>
+        {processedResources.length === 0 && searchQuery ? (
+          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+            <p>未找到匹配 "{searchQuery}" 的资产</p>
+            <button onClick={() => setSearchQuery('')} className="text-indigo-500 hover:underline mt-2 text-sm">清除搜索</button>
+          </div>
+        ) : (
+          <>
+            {viewMode === 'card' && <CardView resources={processedResources} onEdit={onEditResource} />}
+            {viewMode === 'list' && (
+              <div className="animate-fade-in">
+                  <ResourceTable 
+                    title="资产清单" 
+                    resources={processedResources} 
+                    onDelete={onDeleteResource} 
+                    onEdit={onEditResource}
+                    hideHeader={false}
+                    sortConfig={sortConfig}
+                    onSort={handleSortChange}
+                  />
+              </div>
+            )}
+            {viewMode === 'heatmap' && <HeatmapView resources={resources} />} 
+            {/* Heatmap usually shows all data, or we can filter it too. Here I kept it showing all for context, but you can change to processedResources */}
+          </>
         )}
-        {viewMode === 'heatmap' && <HeatmapView resources={resources} />}
       </div>
       
     </div>
