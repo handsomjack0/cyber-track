@@ -8,3 +8,8 @@ pages_build_output_dir = "dist"
 binding = "DB"
 database_name = "cybertrack-db"
 database_id = "3048df8f-b102-450b-9f35-351a6dac9587"
+
+# 普通环境变量 (非敏感信息写在这里)
+[vars]
+API_SECRET = "demo-secret"
+# TELEGRAM_BOT_TOKEN 不写在这里，请在 Dashboard 后台添加为 Secret
