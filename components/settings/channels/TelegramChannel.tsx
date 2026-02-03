@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Send, CheckCircle, AlertCircle, Loader2, ShieldCheck, Bot, Terminal } from 'lucide-react';
+import { Send, CheckCircle, AlertCircle, Loader2, ShieldCheck, Bot, Zap } from 'lucide-react';
 import { TelegramConfig } from '../../../types';
 import { sendTelegramTestMessage } from '../../../services/notifications/telegramService';
 
@@ -12,6 +12,10 @@ interface TelegramChannelProps {
 const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) => {
   const [testing, setTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  
+  const [setupLoading, setSetupLoading] = useState(false);
+  const [setupStatus, setSetupStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [setupMsg, setSetupMsg] = useState('');
 
   const handleTest = async () => {
     setTesting(true);
@@ -28,9 +32,34 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
     }
   };
 
-  // Get current host for display purposes
-  const currentHost = typeof window !== 'undefined' ? window.location.origin : 'https://your-project.pages.dev';
-  const webhookUrl = `${currentHost}/api/webhook`;
+  const handleAutoSetup = async () => {
+    setSetupLoading(true);
+    setSetupStatus('idle');
+    setSetupMsg('');
+    
+    try {
+      const response = await fetch('/api/telegram/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ origin: window.location.origin })
+      });
+      
+      const data = await response.json();
+      
+      if (data.ok) {
+        setSetupStatus('success');
+        setSetupMsg('Webhook 激活成功！');
+      } else {
+        setSetupStatus('error');
+        setSetupMsg(data.description || '配置失败，请检查 Token');
+      }
+    } catch (e) {
+      setSetupStatus('error');
+      setSetupMsg('网络请求失败');
+    } finally {
+      setSetupLoading(false);
+    }
+  };
 
   return (
     <div className={`border rounded-xl p-6 transition-all ${config.enabled ? 'bg-white border-indigo-200 shadow-sm' : 'bg-slate-50 border-slate-200 opacity-80'}`}>
@@ -108,35 +137,32 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
               启用双向指令交互 (可选)
             </h4>
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-              <p className="text-xs text-slate-600 mb-3 leading-relaxed">
-                要使 Bot 能够响应 <code className="bg-slate-200 px-1 rounded">/status</code> 或 <code className="bg-slate-200 px-1 rounded">/list</code> 等指令，您需要将 Bot 的 Webhook 设置为本站点的 API 地址。
+              <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                要使 Bot 能够响应 <code className="bg-slate-200 px-1 rounded">/status</code> 等指令，必须注册 Webhook。
+                <br/>
+                系统会自动使用当前的 Token 和站点地址进行配置。
               </p>
               
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase">1. 您的 Webhook 地址</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <code className="flex-1 bg-white border border-slate-300 rounded px-2 py-1.5 text-xs font-mono text-slate-600 break-all select-all">
-                      {webhookUrl}
-                    </code>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase">2. 设置指令 (复制并访问)</label>
-                  <div className="mt-1 bg-slate-900 rounded-lg p-3 group relative">
-                    <code className="text-xs font-mono text-green-400 break-all">
-                      https://api.telegram.org/bot<span className="text-yellow-400">&lt;YOUR_BOT_TOKEN&gt;</span>/setWebhook?url={webhookUrl}
-                    </code>
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Terminal size={14} className="text-slate-500" />
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    请将 <span className="text-slate-600 font-mono">&lt;YOUR_BOT_TOKEN&gt;</span> 替换为您真实的 Token，并在浏览器中访问该链接以激活 Webhook。
-                  </p>
-                </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleAutoSetup}
+                  disabled={setupLoading}
+                  className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-2 shadow-sm transition-all
+                    ${setupStatus === 'success' ? 'bg-green-600 hover:bg-green-700' : 
+                      'bg-slate-900 hover:bg-slate-800 disabled:opacity-70 disabled:cursor-not-allowed'}`}
+                >
+                  {setupLoading ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+                  {setupLoading ? '配置中...' : setupStatus === 'success' ? '已重新激活' : '⚡ 一键自动激活 Webhook'}
+                </button>
               </div>
+
+              {setupMsg && (
+                <div className={`mt-3 text-xs flex items-center gap-1.5 ${setupStatus === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                  {setupStatus === 'success' ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+                  {setupMsg}
+                </div>
+              )}
+
             </div>
           </div>
 
