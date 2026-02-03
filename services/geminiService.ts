@@ -1,15 +1,19 @@
 
 import { Resource } from "../types/index";
-import { API_CLIENT_SECRET } from '../utils/constants';
+
+const getHeaders = () => {
+  const token = localStorage.getItem('cloudtrack_access_token') || '';
+  return {
+    'Content-Type': 'application/json',
+    'x-api-key': token
+  };
+};
 
 export const analyzePortfolio = async (resources: Resource[]): Promise<string> => {
   try {
     const response = await fetch('/api/ai/analyze', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_CLIENT_SECRET 
-      },
+      headers: getHeaders(),
       body: JSON.stringify(resources),
     });
 

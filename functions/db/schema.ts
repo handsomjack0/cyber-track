@@ -15,7 +15,6 @@ export const resources = sqliteTable('resources', {
   autoRenew: integer('auto_renew', { mode: 'boolean' }).notNull().default(false),
   billingCycle: text('billing_cycle'),
   notes: text('notes'),
-  // Store JSON object as text string
   notificationSettings: text('notification_settings', { mode: 'json' }).$type<{
     enabled: boolean;
     useGlobal: boolean;
@@ -23,29 +22,33 @@ export const resources = sqliteTable('resources', {
     lastNotified?: string;
     channels?: { telegram: boolean; email: boolean; webhook: boolean };
   }>(),
-  // Tags array stored as JSON
   tags: text('tags', { mode: 'json' }).$type<string[]>().default([]),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
-// 设置表 (单行存储，ID固定为 'global')
+// 设置表
 export const settings = sqliteTable('settings', {
   id: text('id').primaryKey().$defaultFn(() => 'global'),
   reminderDays: integer('reminder_days').notNull().default(7),
-  // Telegram Config JSON
   telegram: text('telegram', { mode: 'json' }).$type<{
     enabled: boolean;
     chatId: string;
   }>().notNull(),
-  // Email Config JSON
   email: text('email', { mode: 'json' }).$type<{
     enabled: boolean;
     email: string;
   }>().notNull(),
-  // Webhook Config JSON
   webhook: text('webhook', { mode: 'json' }).$type<{
     enabled: boolean;
     url: string;
   }>().notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+// 安全日志表 (用于防暴力破解)
+export const authLogs = sqliteTable('auth_logs', {
+  ip: text('ip').primaryKey(),
+  attempts: integer('attempts').notNull().default(0),
+  lastAttemptAt: integer('last_attempt_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  blockedUntil: integer('blocked_until', { mode: 'timestamp' }), // 如果不为空且大于当前时间，则为封禁状态
 });

@@ -1,30 +1,7 @@
 
-import { Resource, ResourceType } from '../../../utils/storage';
-
-const getDaysRemaining = (expiryDate?: string) => {
-  if (!expiryDate) return 9999; 
-  const today = new Date();
-  const target = new Date(expiryDate);
-  today.setHours(0, 0, 0, 0);
-  target.setHours(0, 0, 0, 0);
-  const diffTime = target.getTime() - today.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-};
-
-const getStatusEmoji = (days: number, hasDate: boolean) => {
-  if (!hasDate) return '♾️'; // Infinite/Lifetime
-  if (days < 0) return '🔴'; // Expired
-  if (days <= 7) return '🆘'; // Very Urgent
-  if (days <= 30) return '🟠'; // Urgent
-  return '🟢'; // Healthy
-};
-
-const getStatusText = (days: number, hasDate: boolean) => {
-  if (!hasDate) return '长期有效';
-  if (days < 0) return `已过期 ${Math.abs(days)} 天`;
-  if (days === 0) return '今天到期';
-  return `剩余 ${days} 天`;
-};
+import { Resource } from '../../../utils/storage';
+import { getDaysRemaining } from '../../../utils/time';
+import { getStatusEmoji, getStatusText } from './helpers';
 
 // --- Specific Formatters ---
 

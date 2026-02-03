@@ -1,6 +1,5 @@
 
 import { AppSettings } from '../../types';
-import { API_CLIENT_SECRET } from '../../utils/constants';
 
 // Fallback default in case API fails or loading
 const DEFAULT_SETTINGS: AppSettings = {
@@ -19,9 +18,12 @@ const DEFAULT_SETTINGS: AppSettings = {
   },
 };
 
-const headers = {
-  'Content-Type': 'application/json',
-  'x-api-key': API_CLIENT_SECRET
+const getHeaders = () => {
+  const token = localStorage.getItem('cloudtrack_access_token') || '';
+  return {
+    'Content-Type': 'application/json',
+    'x-api-key': token
+  };
 };
 
 export const getSettings = async (): Promise<AppSettings> => {
@@ -30,33 +32,33 @@ export const getSettings = async (): Promise<AppSettings> => {
   const localData = stored ? JSON.parse(stored) : null;
 
   try {
-    const res = await fetch('/api/v1/settings', { headers });
+    const res = await fetch('/api/v1/settings', { headers: getHeaders() });
+    
+    if (res.status === 401) {
+       // Silent fail on auth for settings, maybe just return default
+       console.warn('Unauthorized fetch settings');
+       return localData || DEFAULT_SETTINGS;
+    }
+
     if (!res.ok) throw new Error('Failed to fetch settings');
     
     const apiData = await res.json();
     
-    // INTELLIGENT MERGE STRATEGY:
-    // If API returns "default-like" data (e.g. disabled and empty ID),
-    // but LocalStorage has "configured" data, assume Backend failed to persist
-    // or is in ephemeral mode, so we TRUST LOCAL STORAGE to prevent UX reset.
+    // INTELLIGENT MERGE STRATEGY
     const isApiDefault = !apiData.telegram.enabled && !apiData.telegram.chatId;
     const hasLocalConfig = localData && (localData.telegram.enabled || localData.telegram.chatId);
 
     if (isApiDefault && hasLocalConfig) {
       console.warn('API returned defaults but local config exists. Using local config.');
-      // Optionally: Try to re-sync to backend here if needed
       saveSettings(localData).catch(console.error); 
       return localData;
     }
 
-    // Otherwise, trust the API as the source of truth
-    // Update local storage to match API
     localStorage.setItem('cloudtrack_settings', JSON.stringify(apiData));
     return apiData;
 
   } catch (error) {
     console.error('Settings fetch error:', error);
-    // Fallback to local storage if API fails (offline mode support)
     return localData || DEFAULT_SETTINGS;
   }
 };
@@ -69,7 +71,7 @@ export const saveSettings = async (settings: AppSettings): Promise<void> => {
   try {
     const res = await fetch('/api/v1/settings', {
       method: 'POST',
-      headers,
+      headers: getHeaders(),
       body: JSON.stringify(settings)
     });
     
@@ -79,6 +81,6 @@ export const saveSettings = async (settings: AppSettings): Promise<void> => {
     }
   } catch (error) {
     console.error('Settings save error:', error);
-    throw error; // Propagate error so UI can show alert
+    throw error; 
   }
 };

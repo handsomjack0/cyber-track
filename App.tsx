@@ -7,11 +7,15 @@ import ResourceListView from './components/views/ResourceListView';
 import AddResourceModal from './components/resources/AddResourceModal';
 import SettingsView from './components/settings/SettingsView';
 import LoadingState from './components/common/LoadingState';
+import LoginView from './components/auth/LoginView';
 import { Resource, ResourceType } from './types/index';
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { useResourceManager } from './hooks/useResourceManager';
 
-const App: React.FC = () => {
+// Separate content component to use Auth Context
+const AppContent: React.FC = () => {
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   
   // Logic separated into custom hook
@@ -20,6 +24,9 @@ const App: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
+
+  if (authLoading) return <LoadingState />;
+  if (!isAuthenticated) return <LoginView />;
 
   const handleDelete = async (id: string) => {
     if (window.confirm('确定要删除这个资源吗？此操作不可恢复。')) {
@@ -142,21 +149,29 @@ const App: React.FC = () => {
   };
 
   return (
-    <ThemeProvider>
-      <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        
-        <main className="flex-1 p-6 lg:p-10 overflow-y-auto h-screen relative scroll-smooth no-scrollbar">
-          {renderContent()}
-        </main>
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      
+      <main className="flex-1 p-6 lg:p-10 overflow-y-auto h-screen relative scroll-smooth no-scrollbar">
+        {renderContent()}
+      </main>
 
-        <AddResourceModal 
-          isOpen={isModalOpen} 
-          onClose={() => { setIsModalOpen(false); setEditingResource(null); }} 
-          onSave={handleSaveResource}
-          initialData={editingResource}
-        />
-      </div>
+      <AddResourceModal 
+        isOpen={isModalOpen} 
+        onClose={() => { setIsModalOpen(false); setEditingResource(null); }} 
+        onSave={handleSaveResource}
+        initialData={editingResource}
+      />
+    </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </ThemeProvider>
   );
 };

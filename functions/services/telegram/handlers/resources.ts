@@ -2,17 +2,7 @@
 import { Env, Resource, ResourceType } from '../../../utils/storage';
 import { sendMessage } from '../client';
 import { formatResourceItem } from '../formatters/index';
-
-// Helper: Calculate days remaining for sorting
-const getDaysRemaining = (expiryDate?: string) => {
-  if (!expiryDate) return 9999; 
-  const today = new Date();
-  const target = new Date(expiryDate);
-  today.setHours(0, 0, 0, 0);
-  target.setHours(0, 0, 0, 0);
-  const diffTime = target.getTime() - today.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-};
+import { getDaysRemaining } from '../../../utils/time';
 
 const formatResourceList = (list: Resource[], title: string): string => {
   if (list.length === 0) return `📭 <b>${title}</b>\n\n暂无相关资产。`;
