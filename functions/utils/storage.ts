@@ -10,6 +10,7 @@ export interface Env {
   CLOUDTRACK_KV: KVNamespace;
   API_SECRET: string;
   TELEGRAM_BOT_TOKEN?: string;
+  API_KEY?: string;
 }
 
 export interface Resource {

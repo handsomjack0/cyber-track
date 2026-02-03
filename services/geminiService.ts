@@ -1,41 +1,28 @@
 
-import { GoogleGenAI } from "@google/genai";
 import { Resource } from "../types";
 
 export const analyzePortfolio = async (resources: Resource[]): Promise<string> => {
-  // Access key safely
-  const apiKey = process.env.API_KEY;
-
-  if (!apiKey) {
-    return "API Key is missing. Please configure 'API_KEY' in your environment variables.";
-  }
-
   try {
-    // Initialize client lazily to avoid top-level crashes
-    const ai = new GoogleGenAI({ apiKey: apiKey });
-
-    const prompt = `
-      You are a System Administrator Advisor. Analyze the following JSON list of VPS and Domain resources.
-      
-      Data:
-      ${JSON.stringify(resources)}
-
-      Please provide a concise summary report in Markdown format covering:
-      1. **Urgent Alerts**: Any items expiring in the next 30 days.
-      2. **Cost Analysis**: Total monthly/yearly projection (assume costs listed are annual if domain, monthly if VPS, but verify based on context if possible, otherwise treat as flat cost units).
-      3. **Optimization Tips**: Suggestions on consolidation or renewal strategies based on the providers listed.
-      
-      Keep the tone professional and helpful.
-    `;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
+    const response = await fetch('/api/ai/analyze', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // In a real app with auth, you'd add the x-api-key or token here. 
+        // For this demo, we assume the backend allows it or checks a static secret if configured.
+        'x-api-key': 'demo-secret' 
+      },
+      body: JSON.stringify(resources),
     });
 
-    return response.text || "No analysis generated.";
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to analyze');
+    }
+
+    return data.analysis || "No analysis generated.";
   } catch (error) {
-    console.error("Gemini Analysis Error:", error);
-    return "Failed to generate analysis. Please try again later.";
+    console.error("Gemini Service Error:", error);
+    return "Failed to connect to analysis server. Please check your network or API configuration.";
   }
 };
