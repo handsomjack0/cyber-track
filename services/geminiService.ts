@@ -1,5 +1,6 @@
 
 import { Resource } from "../types/index";
+import { API_CLIENT_SECRET } from '../utils/constants';
 
 export const analyzePortfolio = async (resources: Resource[]): Promise<string> => {
   try {
@@ -7,9 +8,7 @@ export const analyzePortfolio = async (resources: Resource[]): Promise<string> =
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // In a real app with auth, you'd add the x-api-key or token here. 
-        // For this demo, we assume the backend allows it or checks a static secret if configured.
-        'x-api-key': 'demo-secret' 
+        'x-api-key': API_CLIENT_SECRET 
       },
       body: JSON.stringify(resources),
     });

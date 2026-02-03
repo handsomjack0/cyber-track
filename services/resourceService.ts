@@ -1,14 +1,13 @@
 
 import { Resource } from '../types/index';
+import { API_CLIENT_SECRET } from '../utils/constants';
 
 const API_BASE = '/api/v1/resources';
 const API_BULK = '/api/v1/resources/bulk';
-// Note: In production, this secret should be handled via a proper auth context
-const API_SECRET = 'demo-secret'; 
 
 const headers = {
   'Content-Type': 'application/json',
-  'x-api-key': API_SECRET
+  'x-api-key': API_CLIENT_SECRET
 };
 
 export const resourceService = {

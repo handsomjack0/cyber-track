@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Send, CheckCircle, AlertCircle, Loader2, ShieldCheck, Bot, Zap } from 'lucide-react';
+import { Send, CheckCircle, AlertCircle, Loader2, ShieldCheck, Bot, Zap, Info } from 'lucide-react';
 import { TelegramConfig } from '../../../types';
 import { sendTelegramTestMessage } from '../../../services/notifications/telegramService';
 
@@ -101,8 +101,8 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
             <div className="flex gap-2 items-start">
               <ShieldCheck className="text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" size={16} />
               <div className="text-xs text-indigo-800 dark:text-indigo-200">
-                <p className="font-semibold mb-1">后端配置指南</p>
-                <p>Bot Token 不再通过前端保存。请在 Cloudflare Pages 项目的 <strong>Settings &gt; Environment variables</strong> 中添加：</p>
+                <p className="font-semibold mb-1">后端配置指南 (Bot Token)</p>
+                <p>Bot Token 是最高权限密钥，<strong>严禁</strong>在前端保存。请务必在 Cloudflare Pages 项目的 <strong>Settings &gt; Environment variables</strong> 中添加：</p>
                 <code className="block bg-white dark:bg-slate-900 px-2 py-1 mt-1 rounded border border-indigo-200 dark:border-indigo-800 font-mono text-indigo-600 dark:text-indigo-400 select-all">
                   TELEGRAM_BOT_TOKEN
                 </code>
@@ -112,12 +112,12 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
 
           {/* Chat ID Config */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Chat ID (接收通知)</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Chat ID (接收人ID)</label>
             <div className="flex gap-2">
               <input
                 type="text"
                 className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono"
-                placeholder="123456789"
+                placeholder="例如: 123456789"
                 value={config.chatId}
                 onChange={(e) => onChange({ ...config, chatId: e.target.value })}
               />
@@ -136,7 +136,10 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
                 {testStatus === 'success' ? '发送成功' : testStatus === 'error' ? '发送失败' : '测试通知'}
               </button>
             </div>
-            <p className="text-xs text-slate-400 mt-2">在 Telegram 搜索 <span className="font-mono">@userinfobot</span> 获取 ID。</p>
+            <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500 dark:text-slate-400">
+               <Info size={12} />
+               <span>此 ID 仅用于标识消息接收者（类似邮箱地址），属于非敏感公开信息，可放心保存。</span>
+            </div>
           </div>
 
           {/* Webhook Configuration Section */}

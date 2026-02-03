@@ -1,5 +1,6 @@
 
 import { AppSettings } from '../../types';
+import { API_CLIENT_SECRET } from '../../utils/constants';
 
 // Fallback default in case API fails or loading
 const DEFAULT_SETTINGS: AppSettings = {
@@ -18,10 +19,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   },
 };
 
-const API_SECRET = 'demo-secret'; 
 const headers = {
   'Content-Type': 'application/json',
-  'x-api-key': API_SECRET
+  'x-api-key': API_CLIENT_SECRET
 };
 
 export const getSettings = async (): Promise<AppSettings> => {
