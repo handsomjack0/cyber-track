@@ -1,3 +1,4 @@
+
 import { D1Database } from '@cloudflare/workers-types';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
@@ -45,6 +46,7 @@ export interface Resource {
   billingCycle?: string | null;
   notes?: string | null;
   notificationSettings?: ResourceNotificationSettings | null;
+  tags?: string[] | null;
 }
 
 export interface AppSettings {

@@ -45,7 +45,8 @@ export const onRequestPost = async (context: { env: Env, request: Request }) => 
       status: 'Active', 
       autoRenew: body.autoRenew || false,
       notes: body.notes || null,
-      notificationSettings: body.notificationSettings || null
+      notificationSettings: body.notificationSettings || null,
+      tags: body.tags || []
     };
 
     const db = getDb(context.env);

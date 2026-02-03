@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Resource, ResourceType } from '../../../types';
-import { StickyNote, Server, Globe, Smartphone } from 'lucide-react';
+import { StickyNote, Server, Globe, Smartphone, Tag } from 'lucide-react';
+import TagInput from '../../common/TagInput';
 
 interface InfrastructureFormProps {
   initialData: Resource | null;
@@ -18,6 +19,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
     type: ResourceType.VPS,
     autoRenew: false,
     notes: '',
+    tags: [] as string[]
   });
 
   useEffect(() => {
@@ -31,6 +33,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
         type: initialData.type,
         autoRenew: initialData.autoRenew,
         notes: initialData.notes || '',
+        tags: initialData.tags || []
       });
     } else {
       // Default to VPS if new
@@ -83,6 +86,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
       type: formData.type,
       autoRenew: formData.autoRenew,
       notes: formData.notes,
+      tags: formData.tags
     });
   };
 
@@ -176,6 +180,17 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
         </div>
       </div>
       
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
+          <Tag size={14} className="text-slate-400" /> 标签 / 分组
+        </label>
+        <TagInput 
+          tags={formData.tags} 
+          onChange={(newTags) => setFormData({...formData, tags: newTags})} 
+          placeholder="输入标签 (如: Dev, VPN) 并回车"
+        />
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
           <StickyNote size={14} className="text-slate-400" /> 备注

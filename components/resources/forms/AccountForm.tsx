@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Resource, ResourceType, BillingCycle } from '../../../types';
-import { CalendarClock, CreditCard, StickyNote, Calendar } from 'lucide-react';
+import { CalendarClock, CreditCard, StickyNote, Calendar, Tag } from 'lucide-react';
+import TagInput from '../../common/TagInput';
 
 interface AccountFormProps {
   initialData: Resource | null;
@@ -19,6 +20,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit }) => {
     billingCycle: BillingCycle.MONTHLY,
     autoRenew: true,
     notes: '',
+    tags: [] as string[]
   });
 
   useEffect(() => {
@@ -33,6 +35,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit }) => {
         billingCycle: initialData.billingCycle || BillingCycle.MONTHLY,
         autoRenew: initialData.autoRenew,
         notes: initialData.notes || '',
+        tags: initialData.tags || []
       });
     } else {
         // Set today as default start date
@@ -54,6 +57,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit }) => {
       billingCycle: formData.billingCycle,
       autoRenew: formData.autoRenew,
       notes: formData.notes,
+      tags: formData.tags
     });
   };
 
@@ -156,6 +160,17 @@ const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit }) => {
               <option value="£">£ (GBP)</option>
             </select>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
+          <Tag size={14} className="text-slate-400" /> 标签 / 分组
+        </label>
+        <TagInput 
+          tags={formData.tags} 
+          onChange={(newTags) => setFormData({...formData, tags: newTags})} 
+          placeholder="输入标签 (如: Work, Personal) 并回车"
+        />
       </div>
 
       <div>

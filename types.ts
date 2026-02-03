@@ -47,6 +47,7 @@ export interface Resource {
   startDate?: string; // When the subscription started
 
   notificationSettings?: ResourceNotificationSettings;
+  tags?: string[];
 }
 
 export interface StatCardProps {

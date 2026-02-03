@@ -38,7 +38,8 @@ export const onRequestPut = async (context: { env: Env, request: Request, params
       billingCycle: body.billingCycle,
       autoRenew: body.autoRenew,
       notes: body.notes,
-      notificationSettings: body.notificationSettings
+      notificationSettings: body.notificationSettings,
+      tags: body.tags
     };
 
     // Remove undefined keys so we don't overwrite with null unless intended

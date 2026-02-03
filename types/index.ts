@@ -44,6 +44,7 @@ export interface Resource {
   billingCycle?: BillingCycle;
   startDate?: string;
   notificationSettings?: ResourceNotificationSettings;
+  tags?: string[]; // Added tags field
 }
 
 export interface StatCardProps {

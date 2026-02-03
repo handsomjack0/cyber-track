@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Resource, SortConfig, SortField } from '../../types';
-import { List, Grid, Calendar, AlertCircle } from 'lucide-react';
+import { List, Grid, Calendar, AlertCircle, Filter, X } from 'lucide-react';
 import ResourceTable from '../resources/ResourceTable';
 import CardView from './CardView';
 import HeatmapView from './HeatmapView';
@@ -22,10 +22,18 @@ type ViewMode = 'card' | 'list' | 'heatmap';
 const DashboardView: React.FC<DashboardViewProps> = ({ resources, onOpenAddModal, onEditResource, onDeleteResource }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     field: 'expiryDate',
     direction: 'asc',
   });
+
+  // Extract all unique tags
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    resources.forEach(r => r.tags?.forEach(t => tags.add(t)));
+    return Array.from(tags).sort();
+  }, [resources]);
 
   // Filter & Sort Resources
   const processedResources = useMemo(() => {
@@ -37,13 +45,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({ resources, onOpenAddModal
       result = result.filter(r => 
         r.name.toLowerCase().includes(query) || 
         r.provider.toLowerCase().includes(query) ||
-        r.notes?.toLowerCase().includes(query)
+        r.notes?.toLowerCase().includes(query) ||
+        r.tags?.some(t => t.toLowerCase().includes(query))
       );
     }
 
-    // 2. Sort
+    // 2. Filter by Tag
+    if (selectedTag) {
+      result = result.filter(r => r.tags?.includes(selectedTag));
+    }
+
+    // 3. Sort
     return sortResources(result, sortConfig);
-  }, [resources, searchQuery, sortConfig]);
+  }, [resources, searchQuery, sortConfig, selectedTag]);
 
   // Handle Sort Change
   const handleSortChange = (field: SortField) => {
@@ -96,10 +110,36 @@ const DashboardView: React.FC<DashboardViewProps> = ({ resources, onOpenAddModal
         </div>
 
         {/* View Switcher & Controls */}
-        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-col lg:flex-row items-end lg:items-center gap-3 w-full lg:w-auto">
           
-          <div className="w-full sm:w-64">
-             <SearchInput value={searchQuery} onChange={setSearchQuery} />
+          <div className="flex items-center gap-3 w-full lg:w-auto">
+            <div className="flex-1 lg:w-64">
+               <SearchInput value={searchQuery} onChange={setSearchQuery} />
+            </div>
+            
+            {/* Tag Filter Dropdown */}
+            {allTags.length > 0 && (
+              <div className="relative group">
+                <select
+                  value={selectedTag || ''}
+                  onChange={(e) => setSelectedTag(e.target.value || null)}
+                  className={`appearance-none pl-9 pr-8 py-2 rounded-xl border leading-5 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all cursor-pointer
+                    ${selectedTag ? 'border-indigo-500 text-indigo-600 font-medium' : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'}
+                  `}
+                >
+                  <option value="">所有标签</option>
+                  {allTags.map(tag => (
+                    <option key={tag} value={tag}>#{tag}</option>
+                  ))}
+                </select>
+                <Filter size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${selectedTag ? 'text-indigo-500' : 'text-slate-400'}`} />
+                {selectedTag && (
+                  <div className="absolute inset-y-0 right-6 flex items-center pointer-events-none">
+                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -143,12 +183,25 @@ const DashboardView: React.FC<DashboardViewProps> = ({ resources, onOpenAddModal
         </div>
       </div>
 
+      {/* Tag Selection Indicator */}
+      {selectedTag && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-500">正在筛选标签:</span>
+          <button 
+            onClick={() => setSelectedTag(null)}
+            className="flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium hover:bg-indigo-100 transition-colors"
+          >
+            #{selectedTag} <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* View Content */}
       <div className="min-h-[400px]">
-        {processedResources.length === 0 && searchQuery ? (
+        {processedResources.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-            <p>未找到匹配 "{searchQuery}" 的资产</p>
-            <button onClick={() => setSearchQuery('')} className="text-indigo-500 hover:underline mt-2 text-sm">清除搜索</button>
+            <p>未找到匹配 {searchQuery ? `"${searchQuery}"` : selectedTag ? `#${selectedTag}` : ''} 的资产</p>
+            <button onClick={() => { setSearchQuery(''); setSelectedTag(null); }} className="text-indigo-500 hover:underline mt-2 text-sm">清除筛选</button>
           </div>
         ) : (
           <>

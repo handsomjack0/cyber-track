@@ -1,3 +1,4 @@
+
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
 // 资源表
@@ -22,6 +23,8 @@ export const resources = sqliteTable('resources', {
     lastNotified?: string;
     channels?: { telegram: boolean; email: boolean; webhook: boolean };
   }>(),
+  // Tags array stored as JSON
+  tags: text('tags', { mode: 'json' }).$type<string[]>().default([]),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
