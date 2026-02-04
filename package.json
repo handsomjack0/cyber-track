@@ -9,19 +9,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "@google/genai": "^1.39.0",
-    "lucide-react": "^0.563.0",
-    "recharts": "^3.7.0",
-    "drizzle-orm": "^0.45.1",
-    "@cloudflare/workers-types": "^4.20260203.0",
-    "drizzle-kit": "^0.31.8"
+    "@cloudflare/workers-types": "^4.20240215.0",
+    "@google/genai": "^1.10.0",
+    "drizzle-kit": "^0.31.8",
+    "drizzle-orm": "^0.30.0",
+    "lucide-react": "^0.320.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.12.2"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "@types/node": "^20.11.30",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "~5.4.5",
+    "vite": "^7.3.1"
   }
 }
