@@ -9,10 +9,10 @@ interface WebhookChannelProps {
 
 const WebhookChannel: React.FC<WebhookChannelProps> = ({ config, onChange }) => {
   return (
-    <div className={`border rounded-xl p-6 transition-all ${config.enabled ? 'bg-white/90 dark:bg-slate-900/70 border-indigo-200 dark:border-slate-800 shadow-sm' : 'bg-slate-50/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/60 opacity-80'}`}>
+    <div className={`border rounded-xl p-6 transition-all ${config.enabled ? 'bg-white/90 dark:bg-slate-900/70 border-sky-400/30 dark:border-slate-800 shadow-sm' : 'bg-slate-50/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/60 opacity-80'}`}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-600 text-white rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-sky-500 text-white rounded-lg flex items-center justify-center">
             <Webhook size={20} />
           </div>
           <div>
@@ -27,7 +27,7 @@ const WebhookChannel: React.FC<WebhookChannelProps> = ({ config, onChange }) => 
             checked={config.enabled}
             onChange={(e) => onChange({ ...config, enabled: e.target.checked })}
           />
-          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sky-400/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
         </label>
       </div>
 
@@ -37,7 +37,7 @@ const WebhookChannel: React.FC<WebhookChannelProps> = ({ config, onChange }) => 
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Webhook URL</label>
             <input
               type="url"
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono bg-white dark:bg-slate-900/70"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-sky-400/40 focus:border-transparent font-mono bg-white dark:bg-slate-900/70"
               placeholder="https://discord.com/api/webhooks/..."
               value={config.url}
               onChange={(e) => onChange({ ...config, url: e.target.value })}
@@ -53,3 +53,4 @@ const WebhookChannel: React.FC<WebhookChannelProps> = ({ config, onChange }) => 
 };
 
 export default WebhookChannel;
+

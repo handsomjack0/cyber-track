@@ -67,7 +67,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit }) => {
           required
           type="text"
           placeholder="例如：ChatGPT Plus, Netflix 4K, Adobe CC"
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition-shadow"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
@@ -80,7 +80,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit }) => {
             required
             type="text"
             placeholder="例如：OpenAI, Apple"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition-shadow"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
             value={formData.provider}
             onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
           />
@@ -88,7 +88,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit }) => {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">订阅周期</label>
           <select
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white transition-shadow"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm bg-white transition-shadow"
             value={formData.billingCycle}
             onChange={(e) => setFormData({ ...formData, billingCycle: e.target.value as BillingCycle })}
           >
@@ -109,7 +109,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit }) => {
           <input
             required
             type="date"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition-shadow font-medium"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow font-medium"
             value={formData.startDate}
             onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
           />
@@ -122,7 +122,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit }) => {
           </label>
           <input
             type="date"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition-shadow text-slate-600"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow text-slate-400"
             value={formData.expiryDate}
             onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
           />
@@ -138,7 +138,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit }) => {
               required
               type="number"
               step="0.01"
-              className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition-shadow"
+              className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
               value={formData.cost}
               onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
             />
@@ -147,7 +147,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit }) => {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">货币单位</label>
           <select
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white transition-shadow"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm bg-white transition-shadow"
             value={formData.currency}
             onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
           >
@@ -177,7 +177,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit }) => {
         <textarea
           rows={2}
           placeholder="填写授权码、登录邮箱、用途等备注信息..."
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition-shadow"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         />
@@ -187,14 +187,15 @@ const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit }) => {
         <input
           type="checkbox"
           id="autoRenew"
-          className="rounded text-amber-600 focus:ring-amber-500"
+          className="rounded text-sky-300 focus:ring-sky-400/40"
           checked={formData.autoRenew}
           onChange={(e) => setFormData({ ...formData, autoRenew: e.target.checked })}
         />
-        <label htmlFor="autoRenew" className="text-sm text-slate-600">已开启自动续费</label>
+        <label htmlFor="autoRenew" className="text-sm text-slate-400">已开启自动续费</label>
       </div>
     </form>
   );
 };
 
 export default AccountForm;
+

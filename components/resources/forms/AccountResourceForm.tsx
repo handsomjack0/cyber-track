@@ -57,7 +57,7 @@ const AccountResourceForm: React.FC<AccountResourceFormProps> = ({ initialData, 
 
   return (
     <form id="resourceForm" onSubmit={handleSubmit} className="space-y-4">
-      <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-800 flex gap-2">
+      <div className="bg-sky-400/10 border border-sky-400/30 rounded-lg p-3 text-xs text-sky-200 flex gap-2">
         <CreditCard size={16} className="shrink-0" />
         <p>用于管理 Netflix、Spotify、ChatGPT 等订阅服务或一次性软件授权。</p>
       </div>
@@ -68,7 +68,7 @@ const AccountResourceForm: React.FC<AccountResourceFormProps> = ({ initialData, 
           required
           type="text"
           placeholder="例如：ChatGPT Plus, Netflix 4K, Adobe CC"
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition-shadow"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
@@ -81,7 +81,7 @@ const AccountResourceForm: React.FC<AccountResourceFormProps> = ({ initialData, 
             required
             type="text"
             placeholder="例如：OpenAI"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition-shadow"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
             value={formData.provider}
             onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
           />
@@ -89,7 +89,7 @@ const AccountResourceForm: React.FC<AccountResourceFormProps> = ({ initialData, 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">订阅周期</label>
           <select
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white transition-shadow"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm bg-white transition-shadow"
             value={formData.billingCycle}
             onChange={(e) => setFormData({ ...formData, billingCycle: e.target.value as BillingCycle })}
           >
@@ -110,7 +110,7 @@ const AccountResourceForm: React.FC<AccountResourceFormProps> = ({ initialData, 
           <input
             required
             type="date"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition-shadow font-medium"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow font-medium"
             value={formData.startDate}
             onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
           />
@@ -123,7 +123,7 @@ const AccountResourceForm: React.FC<AccountResourceFormProps> = ({ initialData, 
           </label>
           <input
             type="date"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition-shadow text-slate-600"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow text-slate-600"
             value={formData.expiryDate}
             onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
           />
@@ -139,7 +139,7 @@ const AccountResourceForm: React.FC<AccountResourceFormProps> = ({ initialData, 
               required
               type="number"
               step="0.01"
-              className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition-shadow"
+              className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
               value={formData.cost}
               onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
             />
@@ -148,7 +148,7 @@ const AccountResourceForm: React.FC<AccountResourceFormProps> = ({ initialData, 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">货币单位</label>
           <select
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white transition-shadow"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm bg-white transition-shadow"
             value={formData.currency}
             onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
           >
@@ -167,7 +167,7 @@ const AccountResourceForm: React.FC<AccountResourceFormProps> = ({ initialData, 
         <textarea
           rows={2}
           placeholder="填写授权码、登录邮箱、用途等备注信息..."
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm transition-shadow"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         />
@@ -177,7 +177,7 @@ const AccountResourceForm: React.FC<AccountResourceFormProps> = ({ initialData, 
         <input
           type="checkbox"
           id="autoRenew"
-          className="rounded text-amber-600 focus:ring-amber-500"
+          className="rounded text-sky-300 focus:ring-sky-400/40"
           checked={formData.autoRenew}
           onChange={(e) => setFormData({ ...formData, autoRenew: e.target.checked })}
         />
@@ -188,3 +188,4 @@ const AccountResourceForm: React.FC<AccountResourceFormProps> = ({ initialData, 
 };
 
 export default AccountResourceForm;
+

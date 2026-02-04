@@ -44,7 +44,7 @@
         --bp-surface: rgba(11, 23, 44, 0.9);
         --bp-surface-strong: rgba(8, 18, 36, 0.95);
         --bp-ink: #e2f2ff;
-        --bp-muted: #8fb8d6;
+        --bp-muted: #a9cbe2;
         --bp-line: #38bdf8;
         --bp-line-soft: rgba(56, 189, 248, 0.35);
         --bp-grid: rgba(56, 189, 248, 0.08);
@@ -245,6 +245,17 @@
       .blueprint .text-slate-400 {
         color: var(--bp-muted) !important;
       }
+      .blueprint input,
+      .blueprint select,
+      .blueprint textarea {
+        color: var(--bp-ink) !important;
+        background-color: rgba(8, 18, 36, 0.7) !important;
+        border-color: var(--bp-line-soft) !important;
+      }
+      .blueprint input::placeholder,
+      .blueprint textarea::placeholder {
+        color: rgba(169, 203, 226, 0.65) !important;
+      }
       .blueprint .text-indigo-700,
       .blueprint .text-indigo-600,
       .blueprint .text-sky-600,
@@ -275,6 +286,17 @@
       .blueprint .selection\\:bg-indigo-100::selection {
         background: rgba(56, 189, 248, 0.25);
         color: var(--bp-ink);
+      }
+      .blueprint .modal-primary {
+        background: rgba(56, 189, 248, 0.18) !important;
+        border: 1px dashed rgba(56, 189, 248, 0.55) !important;
+        color: var(--bp-ink) !important;
+      }
+      .blueprint .modal-primary:hover {
+        background: rgba(56, 189, 248, 0.28) !important;
+      }
+      .blueprint .modal-primary:active {
+        background: rgba(56, 189, 248, 0.36) !important;
       }
       .blueprint .no-scrollbar::-webkit-scrollbar {
         display: none;

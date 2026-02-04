@@ -53,7 +53,7 @@ const NotificationSettings: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center p-12">
-        <Loader2 className="animate-spin text-indigo-500" />
+        <Loader2 className="animate-spin text-sky-300" />
       </div>
     );
   }
@@ -65,15 +65,15 @@ const NotificationSettings: React.FC = () => {
       <div className="bg-white/90 dark:bg-slate-900/70 p-6 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm relative">
         {hasChanges && (
           <div className="absolute top-0 right-0 -mt-2 -mr-2 flex h-4 w-4">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-indigo-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-4 w-4 bg-sky-500"></span>
           </div>
         )}
 
         <div className="flex items-center justify-between mb-6 pb-6 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-              <Bell className="text-indigo-600 dark:text-indigo-400" size={20} />
+              <Bell className="text-sky-300 dark:text-sky-300" size={20} />
               通知通道配置
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
@@ -85,11 +85,11 @@ const NotificationSettings: React.FC = () => {
             disabled={saving || (!hasChanges && saveStatus !== 'success')}
             className={`px-6 py-2.5 rounded-2xl text-sm font-semibold flex items-center gap-2 transition-all shadow-sm
               ${saveStatus === 'success'
-                ? 'bg-indigo-600 text-white ring-2 ring-indigo-200 dark:ring-indigo-900'
+                ? 'bg-indigo-600 text-white ring-2 ring-sky-300/40 dark:ring-indigo-900'
                 : saveStatus === 'error'
                   ? 'bg-rose-600 text-white'
                   : hasChanges
-                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200/40 translate-y-0'
+                    ? 'bg-sky-400/30 hover:bg-sky-400/40 text-white shadow-sky-300/20 translate-y-0'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'}`}
           >
             {saving ? <Loader2 size={16} className="animate-spin" /> :
@@ -118,7 +118,7 @@ const NotificationSettings: React.FC = () => {
               onChange={(e) => handleChange({ ...settings, reminderDays: parseInt(e.target.value) })}
               className="w-64 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
             />
-            <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 w-8 text-center">{settings.reminderDays}</span>
+            <span className="font-mono font-bold text-sky-300 dark:text-sky-300 w-8 text-center">{settings.reminderDays}</span>
             <span className="text-sm text-slate-500 dark:text-slate-400">天前发送提醒</span>
           </div>
           <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
@@ -151,4 +151,5 @@ const CheckCircleIcon = () => (
 );
 
 export default NotificationSettings;
+
 

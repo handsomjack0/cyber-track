@@ -69,7 +69,7 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
   };
 
   return (
-    <div className={`border rounded-xl p-6 transition-all ${config.enabled ? 'bg-white/90 dark:bg-slate-900/70 border-indigo-200 dark:border-slate-800 shadow-sm' : 'bg-slate-50/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/60 opacity-80'}`}>
+    <div className={`border rounded-xl p-6 transition-all ${config.enabled ? 'bg-white/90 dark:bg-slate-900/70 border-sky-400/30 dark:border-slate-800 shadow-sm' : 'bg-slate-50/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/60 opacity-80'}`}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-sky-500 text-white rounded-lg flex items-center justify-center shadow-lg shadow-sky-500/20">
@@ -87,19 +87,19 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
             checked={config.enabled}
             onChange={(e) => onChange({ ...config, enabled: e.target.checked })}
           />
-          <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-100 dark:peer-focus:ring-indigo-900/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+          <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sky-400/20 dark:peer-focus:ring-sky-400/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
         </label>
       </div>
 
       {config.enabled && (
         <div className="space-y-6 animate-fade-in">
-          <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-900/50 rounded-lg p-3">
+          <div className="bg-sky-400/10 dark:bg-indigo-900/20 border border-sky-400/30 dark:border-sky-400/30 rounded-lg p-3">
             <div className="flex gap-2 items-start">
-              <ShieldCheck className="text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" size={16} />
-              <div className="text-xs text-indigo-800 dark:text-indigo-200">
+              <ShieldCheck className="text-sky-300 dark:text-sky-300 shrink-0 mt-0.5" size={16} />
+              <div className="text-xs text-sky-200 dark:text-sky-200">
                 <p className="font-semibold mb-1">后端配置指南（Bot Token）</p>
                 <p>Bot Token 是最高权限密钥，<strong>禁止</strong>在前端保存。请在 Cloudflare Pages 的 <strong>Settings &gt; Environment variables</strong> 中添加：</p>
-                <code className="block bg-white dark:bg-slate-900 px-2 py-1 mt-1 rounded border border-indigo-200 dark:border-indigo-800 font-mono text-indigo-600 dark:text-indigo-400 select-all">
+                <code className="block bg-white dark:bg-slate-900 px-2 py-1 mt-1 rounded border border-sky-400/30 dark:border-sky-400/30 font-mono text-sky-300 dark:text-sky-300 select-all">
                   TELEGRAM_BOT_TOKEN
                 </code>
               </div>
@@ -155,7 +155,7 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
                   disabled={setupLoading}
                   className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-2 shadow-sm transition-all
                     ${setupStatus === 'success' ? 'bg-blue-600 hover:bg-blue-700' :
-                      'bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 disabled:opacity-70 disabled:cursor-not-allowed'}`}
+                      'bg-slate-900 dark:bg-sky-500 hover:bg-slate-800 dark:hover:bg-sky-600 disabled:opacity-70 disabled:cursor-not-allowed'}`}
                 >
                   {setupLoading ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
                   {setupLoading ? '配置中...' : setupStatus === 'success' ? '已重新激活' : '一键激活 Webhook'}
@@ -177,3 +177,4 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
 };
 
 export default TelegramChannel;
+

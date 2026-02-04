@@ -98,14 +98,14 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
         onClick={() => setCategory('infrastructure')}
         className={`pb-3 text-sm font-medium transition-all relative ${
           category === 'infrastructure'
-            ? 'text-indigo-600'
+            ? 'text-sky-300'
             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
         }`}
       >
         <div className="flex items-center gap-2">
           <LayoutGrid size={16} /> 基础设施资源
         </div>
-        {category === 'infrastructure' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-t-full"></div>}
+        {category === 'infrastructure' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-400/70 rounded-t-full"></div>}
       </button>
 
       <button
@@ -113,14 +113,14 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
         onClick={() => setCategory('account')}
         className={`pb-3 text-sm font-medium transition-all relative ${
           category === 'account'
-            ? 'text-amber-600'
+            ? 'text-sky-300'
             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
         }`}
       >
         <div className="flex items-center gap-2">
           <Key size={16} /> 账号与订阅
         </div>
-        {category === 'account' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-600 rounded-t-full"></div>}
+        {category === 'account' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-400/70 rounded-t-full"></div>}
       </button>
     </div>
   );
@@ -130,7 +130,7 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
       <div className="bg-white/90 dark:bg-slate-900/80 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in transform transition-all flex flex-col max-h-[90vh] border border-white/60 dark:border-slate-800/60">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white/70 dark:bg-slate-900/70 shrink-0">
           <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-indigo-500 font-semibold">Resource</div>
+            <div className="text-xs uppercase tracking-[0.2em] text-sky-300 font-semibold">Resource</div>
             <h3 className="font-semibold text-slate-800 dark:text-slate-100">
               {initialData ? '编辑资产' : '新增资产'}
             </h3>
@@ -188,7 +188,7 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
                     checked={notifySettings.enabled}
                     onChange={(e) => setNotifySettings({ ...notifySettings, enabled: e.target.checked })}
                   />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-100 rounded-full peer peer-checked:bg-indigo-600"></div>
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sky-200/30 rounded-full peer peer-checked:bg-sky-500"></div>
                 </label>
               </div>
 
@@ -198,7 +198,7 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
                     <button
                       type="button"
                       onClick={() => setNotifySettings({ ...notifySettings, useGlobal: true })}
-                      className={`p-3 rounded-xl border text-left transition-all ${notifySettings.useGlobal ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}
+                      className={`p-3 rounded-xl border text-left transition-all ${notifySettings.useGlobal ? 'border-sky-400/50 bg-sky-400/10 text-sky-200' : 'border-slate-200 hover:border-slate-300 text-slate-400'}`}
                     >
                       <div className="font-medium text-sm mb-1">跟随全局</div>
                       <div className="text-xs opacity-80">使用系统默认提醒策略</div>
@@ -206,7 +206,7 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
                     <button
                       type="button"
                       onClick={() => setNotifySettings({ ...notifySettings, useGlobal: false })}
-                      className={`p-3 rounded-xl border text-left transition-all ${!notifySettings.useGlobal ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}
+                      className={`p-3 rounded-xl border text-left transition-all ${!notifySettings.useGlobal ? 'border-sky-400/50 bg-sky-400/10 text-sky-200' : 'border-slate-200 hover:border-slate-300 text-slate-400'}`}
                     >
                       <div className="font-medium text-sm flex items-center gap-1.5 mb-1">
                         自定义 <Settings2 size={14} />
@@ -228,9 +228,9 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
                             max="60"
                             value={notifySettings.reminderDays}
                             onChange={(e) => setNotifySettings({ ...notifySettings, reminderDays: parseInt(e.target.value) })}
-                            className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                            className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-500"
                           />
-                          <div className="w-12 h-8 flex items-center justify-center bg-slate-100 rounded text-sm font-mono font-medium text-indigo-600 border border-slate-200">
+                          <div className="w-12 h-8 flex items-center justify-center bg-slate-100 rounded text-sm font-mono font-medium text-sky-300 border border-slate-200">
                             {notifySettings.reminderDays}
                           </div>
                         </div>
@@ -255,7 +255,7 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
             <button
               form="resourceForm"
               type="submit"
-              className={`flex-1 px-4 py-2.5 text-white rounded-xl font-medium text-sm transition-colors shadow-sm flex items-center justify-center gap-2 ${category === 'account' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+              className="modal-primary flex-1 px-4 py-2.5 rounded-xl font-medium text-sm transition-colors shadow-sm flex items-center justify-center gap-2"
             >
               <Save size={16} />
               {initialData ? '保存修改' : '立即创建'}

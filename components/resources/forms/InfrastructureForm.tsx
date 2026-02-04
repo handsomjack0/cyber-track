@@ -97,7 +97,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
             onClick={() => setFormData({ ...formData, type: t })}
             className={`py-1.5 text-xs font-medium rounded-md flex items-center justify-center gap-1.5 transition-all ${
               formData.type === t
-                ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
+                ? 'bg-white text-sky-300 shadow-sm ring-1 ring-black/5'
                 : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
             }`}
           >
@@ -115,7 +115,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
           required
           type="text"
           placeholder={currentConfig.namePlaceholder}
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
@@ -128,7 +128,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
             required
             type="text"
             placeholder={currentConfig.providerPlaceholder}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
             value={formData.provider}
             onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
           />
@@ -138,7 +138,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
           <input
             required
             type="date"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
             value={formData.expiryDate}
             onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
           />
@@ -154,7 +154,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
               required
               type="number"
               step="0.01"
-              className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
+              className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
               value={formData.cost}
               onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
             />
@@ -163,7 +163,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">货币单位</label>
           <select
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white transition-shadow"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm bg-white transition-shadow"
             value={formData.currency}
             onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
           >
@@ -193,7 +193,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
         <textarea
           rows={2}
           placeholder="填写 IP 地址、SSH 端口、DNS 解析等信息..."
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         />
@@ -203,7 +203,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
         <input
           type="checkbox"
           id="autoRenew"
-          className="rounded text-indigo-600 focus:ring-indigo-500"
+          className="rounded text-sky-300 focus:ring-sky-400/40"
           checked={formData.autoRenew}
           onChange={(e) => setFormData({ ...formData, autoRenew: e.target.checked })}
         />
@@ -214,3 +214,4 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
 };
 
 export default InfrastructureForm;
+

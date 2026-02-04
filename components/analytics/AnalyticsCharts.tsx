@@ -1,5 +1,18 @@
-ï»¿import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import React from 'react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  LabelList,
+  ReferenceLine
+} from 'recharts';
 import { Resource } from '../../types';
 import { convertToCNY, calculateYearlyCost } from '../../utils/currency/conversion';
 
@@ -9,9 +22,24 @@ interface AnalyticsChartsProps {
 }
 
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#3b82f6', '#60a5fa', '#94a3b8'];
+const TOP_PROVIDER_LIMIT = 5;
+const TOP_TAG_LIMIT = 8;
+
+const formatMonthLabel = (dateKey: string) => `${dateKey.split('-')[1]}ÔÂ`;
+
+const buildNext12Months = () => {
+  const now = new Date();
+  const months = [] as { dateKey: string; count: number }[];
+  for (let i = 0; i < 12; i += 1) {
+    const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    months.push({ dateKey: key, count: 0 });
+  }
+  return months;
+};
 
 const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) => {
-  const costByProvider = resources.reduce((acc, curr) => {
+  const costByProviderRaw = resources.reduce((acc, curr) => {
     const yearlyCostRaw = calculateYearlyCost(curr);
     const costCNY = convertToCNY(yearlyCostRaw, curr.currency, rates);
 
@@ -24,6 +52,7 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
     return acc;
   }, [] as { name: string; value: number }[]).sort((a, b) => b.value - a.value);
 
+  const expiryByMonthSeed = buildNext12Months();
   const expiryByMonth = resources.reduce((acc, curr) => {
     if (!curr.expiryDate) return acc;
 
@@ -33,13 +62,9 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
 
     if (existing) {
       existing.count += 1;
-    } else {
-      acc.push({ dateKey: key, count: 1 });
     }
     return acc;
-  }, [] as { dateKey: string; count: number }[])
-    .sort((a, b) => a.dateKey.localeCompare(b.dateKey))
-    .slice(0, 12);
+  }, expiryByMonthSeed);
 
   const costByTagMap = new Map<string, number>();
   let untaggedCost = 0;
@@ -57,33 +82,89 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
     }
   });
 
-  const costByTag = Array.from(costByTagMap.entries())
+  const costByTagRaw = Array.from(costByTagMap.entries())
     .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 10);
+    .sort((a, b) => b.value - a.value);
 
   if (untaggedCost > 0) {
-    costByTag.push({ name: 'æ— æ ‡ç­¾', value: untaggedCost });
+    costByTagRaw.push({ name: 'ÎŞ±êÇ©', value: untaggedCost });
   }
+
+  const totalCost = costByProviderRaw.reduce((a, b) => a + b.value, 0);
+
+  const costByProvider = (() => {
+    if (costByProviderRaw.length <= TOP_PROVIDER_LIMIT) return costByProviderRaw;
+    const topItems = costByProviderRaw.slice(0, TOP_PROVIDER_LIMIT);
+    const otherValue = costByProviderRaw.slice(TOP_PROVIDER_LIMIT).reduce((acc, item) => acc + item.value, 0);
+    return [...topItems, { name: 'ÆäËû', value: otherValue }];
+  })();
+
+  const costByTag = (() => {
+    if (costByTagRaw.length <= TOP_TAG_LIMIT) return costByTagRaw;
+    const topItems = costByTagRaw.slice(0, TOP_TAG_LIMIT);
+    const otherValue = costByTagRaw.slice(TOP_TAG_LIMIT).reduce((acc, item) => acc + item.value, 0);
+    return [...topItems, { name: 'ÆäËû', value: otherValue }];
+  })();
+
+  const maxExpiry = Math.max(...expiryByMonth.map(item => item.count), 1);
+  const peakMonths = expiryByMonth.filter(item => item.count === maxExpiry);
+  const peakKeys = new Set(peakMonths.map(item => item.dateKey));
+  const peakLabel = peakMonths.length
+    ? peakMonths.map(item => formatMonthLabel(item.dateKey)).join('¡¢')
+    : '-';
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0];
+      const dataName = data.name || data.payload.dateKey;
+      const isValue = data.dataKey === 'value';
+      const value = data.value ?? 0;
+      const percent = isValue && totalCost > 0 ? ((value / totalCost) * 100).toFixed(1) : null;
       return (
-        <div className="bg-white dark:bg-slate-900 p-3 border border-slate-100 dark:border-slate-800 shadow-xl rounded-xl text-xs">
-          <p className="font-semibold text-slate-800 dark:text-slate-100 mb-1">{data.name || data.payload.dateKey}</p>
-          <p className="text-slate-500 dark:text-slate-400">
-            {data.dataKey === 'value'
-              ? `å¹´è´¹ç”¨: Â¥${data.value.toFixed(0)}`
-              : `åˆ°æœŸæ•°é‡: ${data.value} é¡¹`}
-          </p>
+        <div className="bg-white/95 dark:bg-slate-900/95 p-3 border border-slate-100/60 dark:border-slate-800/60 shadow-xl rounded-xl text-xs space-y-1">
+          <p className="font-semibold text-slate-800 dark:text-slate-100">{dataName}</p>
+          {isValue ? (
+            <>
+              <p className="text-slate-500 dark:text-slate-400">
+                Äê·ÑÓÃ: £¤{Math.round(Number(value)).toLocaleString('zh-CN')}
+              </p>
+              <p className="text-slate-500 dark:text-slate-400">
+                Õ¼±È: {percent ?? '0.0'}%
+              </p>
+            </>
+          ) : (
+            <p className="text-slate-500 dark:text-slate-400">
+              µ½ÆÚÊıÁ¿: {value} Ïî
+            </p>
+          )}
         </div>
       );
     }
     return null;
   };
 
-  const totalCost = costByProvider.reduce((a, b) => a + b.value, 0);
+  const topProvider = costByProvider[0];
+  const topProviderPercent = topProvider && totalCost > 0
+    ? ((topProvider.value / totalCost) * 100).toFixed(0)
+    : '0';
+
+  const renderPeakFlag = (props: any) => {
+    const { x, y, index } = props;
+    const data = expiryByMonth[index];
+    if (!data || data.count <= 0 || !peakKeys.has(data.dateKey)) return null;
+    return (
+      <text
+        x={x}
+        y={y - 6}
+        textAnchor="middle"
+        fill="#f43f5e"
+        fontSize={10}
+        fontWeight={600}
+      >
+        ·åÖµ
+      </text>
+    );
+  };
 
   return (
     <div className="space-y-6 mb-8">
@@ -91,11 +172,33 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
         <div className="bg-white/90 dark:bg-slate-900/70 p-6 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col blueprint-card">
           <span className="blueprint-dimension" data-dim="PROVIDER" />
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">
-            æœåŠ¡å•†è´¹ç”¨åˆ†å¸ƒï¼ˆæŠ˜åˆäººæ°‘å¸/å¹´ï¼‰
+            ·şÎñÉÌ·ÑÓÃ·Ö²¼£¨ÕÛºÏÈËÃñ±Ò/Äê£©
           </h3>
           <div className="h-64 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
+                <defs>
+                  {costByProvider.map((entry, index) => (
+                    <linearGradient
+                      key={`pie-grad-${index}`}
+                      id={`pie-grad-${index}`}
+                      x1="0%"
+                      y1="0%"
+                      x2="100%"
+                      y2="100%"
+                    >
+                      <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.95} />
+                      <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.6} />
+                    </linearGradient>
+                  ))}
+                  <filter id="pie-glow" x="-40%" y="-40%" width="180%" height="180%">
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                    <feMerge>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
                 <Pie
                   data={costByProvider}
                   cx="50%"
@@ -104,9 +207,15 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
                   outerRadius={80}
                   paddingAngle={5}
                   dataKey="value"
+                  filter="url(#pie-glow)"
                 >
                   {costByProvider.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={`url(#pie-grad-${index})`}
+                      stroke="rgba(255,255,255,0.18)"
+                      strokeWidth={1}
+                    />
                   ))}
                 </Pie>
                 <RechartsTooltip content={<CustomTooltip />} />
@@ -116,10 +225,18 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
               <div className="text-center">
                 <div className="text-xs text-slate-400 font-medium">Total Yearly</div>
                 <div className="text-xl font-bold text-slate-800 dark:text-white">
-                  Â¥{totalCost.toLocaleString('zh-CN', { maximumFractionDigits: 0 })}
+                  £¤{totalCost.toLocaleString('zh-CN', { maximumFractionDigits: 0 })}
                 </div>
               </div>
             </div>
+            {topProvider && (
+              <div className="absolute left-4 top-4 rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/60 px-3 py-2 text-xs shadow-sm">
+                <div className="text-slate-400">Top ·şÎñÉÌ</div>
+                <div className="text-slate-800 dark:text-slate-100 font-semibold">
+                  {topProvider.name} ¡¤ {topProviderPercent}%
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2 justify-center max-h-20 overflow-y-auto custom-scrollbar">
@@ -135,7 +252,7 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
         <div className="bg-white/90 dark:bg-slate-900/70 p-6 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col blueprint-card">
           <span className="blueprint-dimension" data-dim="EXPIRY" />
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">
-            æœªæ¥ 12 ä¸ªæœˆåˆ°æœŸåˆ†å¸ƒ
+            Î´À´ 12 ¸öÔÂµ½ÆÚ·Ö²¼
           </h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -146,7 +263,7 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
                   tick={{ fontSize: 10, fill: '#94a3b8' }}
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(val) => val.split('-')[1] + 'æœˆ'}
+                  tickFormatter={(val) => formatMonthLabel(val)}
                 />
                 <YAxis
                   tick={{ fontSize: 10, fill: '#94a3b8' }}
@@ -154,20 +271,28 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
                   tickLine={false}
                   allowDecimals={false}
                 />
+                <ReferenceLine y={maxExpiry} stroke="#64748b" strokeDasharray="4 4" opacity={0.25} />
                 <RechartsTooltip
                   cursor={{ fill: 'var(--tw-prose-invert-bg)', opacity: 0.1 }}
                   content={<CustomTooltip />}
                 />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                   {expiryByMonth.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.count > 1 ? '#f43f5e' : '#cbd5e1'} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={peakKeys.has(entry.dateKey) ? '#f43f5e' : entry.count > 0 ? '#cbd5e1' : '#94a3b8'}
+                      stroke={peakKeys.has(entry.dateKey) ? 'rgba(244,63,94,0.6)' : 'transparent'}
+                      strokeWidth={peakKeys.has(entry.dateKey) ? 1 : 0}
+                    />
                   ))}
+                  <LabelList dataKey="count" position="top" fill="#94a3b8" fontSize={10} formatter={(val: number) => (val > 0 ? val : '')} />
+                  <LabelList content={renderPeakFlag} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-auto text-xs text-center text-slate-400">
-            åŸºäºå½“å‰èµ„æºåˆ°æœŸæ—¥çš„æœˆåº¦ç»Ÿè®¡
+            ·åÖµÔÂ·İ: {peakLabel} ¡¤ »ùÓÚµ±Ç°×ÊÔ´µ½ÆÚÈÕµÄÔÂ¶ÈÍ³¼Æ
           </div>
         </div>
       </div>
@@ -176,7 +301,7 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
         <div className="bg-white/90 dark:bg-slate-900/70 p-6 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col blueprint-card">
           <span className="blueprint-dimension" data-dim="TAGCOST" />
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">
-            TOP æ ‡ç­¾æˆæœ¬æ’è¡Œï¼ˆæŠ˜åˆäººæ°‘å¸/å¹´ï¼‰
+            TOP ±êÇ©³É±¾ÅÅĞĞ£¨ÕÛºÏÈËÃñ±Ò/Äê£©
           </h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -195,10 +320,22 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
                   cursor={{ fill: 'var(--tw-prose-invert-bg)', opacity: 0.1 }}
                   content={<CustomTooltip />}
                 />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
+                <Bar
+                  dataKey="value"
+                  radius={[0, 4, 4, 0]}
+                  barSize={18}
+                  background={{ fill: 'rgba(148,163,184,0.12)', radius: 6 }}
+                >
                   {costByTag.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.name === 'æ— æ ‡ç­¾' ? '#94a3b8' : COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={entry.name === 'ÎŞ±êÇ©' ? '#94a3b8' : COLORS[index % COLORS.length]} />
                   ))}
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    fill="#94a3b8"
+                    fontSize={10}
+                    formatter={(val: number) => `£¤${Math.round(val).toLocaleString('zh-CN')}`}
+                  />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
