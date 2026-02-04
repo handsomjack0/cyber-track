@@ -45,10 +45,13 @@ export const settings = sqliteTable('settings', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
-// 安全日志表 (用于防暴力破解)
+// 安全日志表 (用于防暴力破解和 2FA)
 export const authLogs = sqliteTable('auth_logs', {
   ip: text('ip').primaryKey(),
   attempts: integer('attempts').notNull().default(0),
   lastAttemptAt: integer('last_attempt_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  blockedUntil: integer('blocked_until', { mode: 'timestamp' }), // 如果不为空且大于当前时间，则为封禁状态
+  blockedUntil: integer('blocked_until', { mode: 'timestamp' }),
+  // 2FA Fields - 新增字段
+  otpCode: text('otp_code'),
+  otpExpiresAt: integer('otp_expires_at', { mode: 'timestamp' }),
 });

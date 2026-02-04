@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 interface AuthContextType {
   isAuthenticated: boolean;
   token: string | null;
-  login: (accessCode: string) => Promise<boolean>;
+  login: (accessCode: string, otp?: string) => Promise<{ success: boolean; require2fa?: boolean; error?: string }>;
   logout: () => void;
   loading: boolean;
 }
@@ -17,37 +17,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check local storage on load
     const storedToken = localStorage.getItem('cloudtrack_access_token');
     if (storedToken) {
-      // Optimistically set authenticated, let API calls fail if expired/changed
       setToken(storedToken);
       setIsAuthenticated(true);
     }
     setLoading(false);
   }, []);
 
-  const login = async (accessCode: string): Promise<boolean> => {
+  const login = async (accessCode: string, otp?: string): Promise<{ success: boolean; require2fa?: boolean; error?: string }> => {
     try {
-      // Verify with backend
       const res = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': accessCode
-        }
+        },
+        body: JSON.stringify({ otp })
       });
 
+      const data = await res.json();
+
       if (res.ok) {
+        // Success
         localStorage.setItem('cloudtrack_access_token', accessCode);
         setToken(accessCode);
         setIsAuthenticated(true);
-        return true;
+        return { success: true };
+      } 
+      
+      // Handle 2FA Requirement
+      if (res.status === 202 && data.require2fa) {
+        return { success: false, require2fa: true };
       }
-      return false;
+
+      return { success: false, error: data.error || '验证失败' };
     } catch (e) {
       console.error(e);
-      return false;
+      return { success: false, error: '网络请求错误' };
     }
   };
 
