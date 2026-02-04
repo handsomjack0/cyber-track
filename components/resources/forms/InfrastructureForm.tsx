@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Resource, ResourceType } from '../../../types';
 import { StickyNote, Server, Globe, Smartphone, Tag } from 'lucide-react';
 import TagInput from '../../common/TagInput';
@@ -36,12 +35,10 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
         tags: initialData.tags || []
       });
     } else {
-      // Default to VPS if new
       setFormData(prev => ({ ...prev, type: ResourceType.VPS }));
     }
   }, [initialData]);
 
-  // Dynamic config based on type
   const formConfig = {
     [ResourceType.VPS]: {
       nameLabel: '服务器名称 / IP',
@@ -64,7 +61,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
       providerPlaceholder: '例如：T-Mobile, Google Voice, China Mobile',
       icon: <Smartphone size={14} />
     },
-    [ResourceType.ACCOUNT]: { // Fallback
+    [ResourceType.ACCOUNT]: {
       nameLabel: '名称',
       namePlaceholder: '',
       providerLabel: '提供商',
@@ -92,17 +89,15 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
 
   return (
     <form id="resourceForm" onSubmit={handleSubmit} className="space-y-4 animate-fade-in">
-      
-      {/* Type Selection inside Form */}
       <div className="grid grid-cols-3 gap-2 bg-slate-100 p-1 rounded-lg mb-4">
         {[ResourceType.VPS, ResourceType.DOMAIN, ResourceType.PHONE_NUMBER].map((t) => (
           <button
             key={t}
             type="button"
-            onClick={() => setFormData({...formData, type: t})}
+            onClick={() => setFormData({ ...formData, type: t })}
             className={`py-1.5 text-xs font-medium rounded-md flex items-center justify-center gap-1.5 transition-all ${
-              formData.type === t 
-                ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5' 
+              formData.type === t
+                ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
                 : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
             }`}
           >
@@ -122,7 +117,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
           placeholder={currentConfig.namePlaceholder}
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
           value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
       </div>
 
@@ -135,7 +130,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
             placeholder={currentConfig.providerPlaceholder}
             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
             value={formData.provider}
-            onChange={(e) => setFormData({...formData, provider: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
           />
         </div>
         <div>
@@ -145,49 +140,49 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
             type="date"
             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
             value={formData.expiryDate}
-            onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">续费金额</label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-slate-500 text-sm">{formData.currency}</span>
-              <input
-                required
-                type="number"
-                step="0.01"
-                className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
-                value={formData.cost}
-                onChange={(e) => setFormData({...formData, cost: e.target.value})}
-              />
-            </div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">续费金额</label>
+          <div className="relative">
+            <span className="absolute left-3 top-2 text-slate-500 text-sm">{formData.currency}</span>
+            <input
+              required
+              type="number"
+              step="0.01"
+              className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
+              value={formData.cost}
+              onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+            />
+          </div>
         </div>
         <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">货币单位</label>
-            <select 
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white transition-shadow"
-              value={formData.currency}
-              onChange={(e) => setFormData({...formData, currency: e.target.value})}
-            >
-              <option value="$">$ (USD)</option>
-              <option value="¥">¥ (CNY)</option>
-              <option value="€">€ (EUR)</option>
-              <option value="£">£ (GBP)</option>
-            </select>
+          <label className="block text-sm font-medium text-slate-700 mb-1">货币单位</label>
+          <select
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white transition-shadow"
+            value={formData.currency}
+            onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+          >
+            <option value="$">$ (USD)</option>
+            <option value="¥">¥ (CNY)</option>
+            <option value="€">€ (EUR)</option>
+            <option value="£">£ (GBP)</option>
+          </select>
         </div>
       </div>
-      
+
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
           <Tag size={14} className="text-slate-400" /> 标签 / 分组
         </label>
-        <TagInput 
-          tags={formData.tags} 
-          onChange={(newTags) => setFormData({...formData, tags: newTags})} 
-          placeholder="输入标签 (如: Dev, VPN) 并回车"
+        <TagInput
+          tags={formData.tags}
+          onChange={(newTags) => setFormData({ ...formData, tags: newTags })}
+          placeholder="输入标签（如：Dev, VPN）并回车"
         />
       </div>
 
@@ -200,7 +195,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
           placeholder="填写 IP 地址、SSH 端口、DNS 解析等信息..."
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
           value={formData.notes}
-          onChange={(e) => setFormData({...formData, notes: e.target.value})}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         />
       </div>
 
@@ -210,7 +205,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
           id="autoRenew"
           className="rounded text-indigo-600 focus:ring-indigo-500"
           checked={formData.autoRenew}
-          onChange={(e) => setFormData({...formData, autoRenew: e.target.checked})}
+          onChange={(e) => setFormData({ ...formData, autoRenew: e.target.checked })}
         />
         <label htmlFor="autoRenew" className="text-sm text-slate-600">已开启自动续费</label>
       </div>

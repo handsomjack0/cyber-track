@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Resource, ResourceType } from '../../../types';
 import { StickyNote } from 'lucide-react';
 
@@ -33,12 +32,10 @@ const StandardResourceForm: React.FC<StandardResourceFormProps> = ({ initialData
         notes: initialData.notes || '',
       });
     } else {
-      // Defaults
       setFormData(prev => ({ ...prev, type: ResourceType.VPS }));
     }
   }, [initialData]);
 
-  // Handle type change from outside or within modal
   const handleTypeChange = (type: ResourceType) => {
     setFormData({ ...formData, type });
   };
@@ -67,7 +64,7 @@ const StandardResourceForm: React.FC<StandardResourceFormProps> = ({ initialData
           placeholder="例如：Production Server, google.com, +1 888..."
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
           value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
       </div>
 
@@ -80,7 +77,7 @@ const StandardResourceForm: React.FC<StandardResourceFormProps> = ({ initialData
             placeholder="例如：AWS, Namecheap"
             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
             value={formData.provider}
-            onChange={(e) => setFormData({...formData, provider: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
           />
         </div>
         <div>
@@ -104,40 +101,40 @@ const StandardResourceForm: React.FC<StandardResourceFormProps> = ({ initialData
           type="date"
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
           value={formData.expiryDate}
-          onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
+          onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">续费金额</label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-slate-500 text-sm">{formData.currency}</span>
-              <input
-                required
-                type="number"
-                step="0.01"
-                className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
-                value={formData.cost}
-                onChange={(e) => setFormData({...formData, cost: e.target.value})}
-              />
-            </div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">续费金额</label>
+          <div className="relative">
+            <span className="absolute left-3 top-2 text-slate-500 text-sm">{formData.currency}</span>
+            <input
+              required
+              type="number"
+              step="0.01"
+              className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
+              value={formData.cost}
+              onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+            />
+          </div>
         </div>
         <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">货币单位</label>
-            <select 
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white transition-shadow"
-              value={formData.currency}
-              onChange={(e) => setFormData({...formData, currency: e.target.value})}
-            >
-              <option value="$">$ (USD)</option>
-              <option value="¥">¥ (CNY)</option>
-              <option value="€">€ (EUR)</option>
-              <option value="£">£ (GBP)</option>
-            </select>
+          <label className="block text-sm font-medium text-slate-700 mb-1">货币单位</label>
+          <select
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white transition-shadow"
+            value={formData.currency}
+            onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+          >
+            <option value="$">$ (USD)</option>
+            <option value="¥">¥ (CNY)</option>
+            <option value="€">€ (EUR)</option>
+            <option value="£">£ (GBP)</option>
+          </select>
         </div>
       </div>
-      
+
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
           <StickyNote size={14} className="text-slate-400" /> 备注
@@ -147,7 +144,7 @@ const StandardResourceForm: React.FC<StandardResourceFormProps> = ({ initialData
           placeholder="填写 IP 地址、SSH 端口、用途等..."
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-shadow"
           value={formData.notes}
-          onChange={(e) => setFormData({...formData, notes: e.target.value})}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         />
       </div>
 
@@ -157,7 +154,7 @@ const StandardResourceForm: React.FC<StandardResourceFormProps> = ({ initialData
           id="autoRenew"
           className="rounded text-indigo-600 focus:ring-indigo-500"
           checked={formData.autoRenew}
-          onChange={(e) => setFormData({...formData, autoRenew: e.target.checked})}
+          onChange={(e) => setFormData({ ...formData, autoRenew: e.target.checked })}
         />
         <label htmlFor="autoRenew" className="text-sm text-slate-600">已开启自动续费</label>
       </div>

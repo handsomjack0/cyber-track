@@ -1,15 +1,14 @@
-
-import React, { useState, KeyboardEvent } from 'react';
+﻿import React, { useState, KeyboardEvent } from 'react';
 import { Tag, X, Plus } from 'lucide-react';
 
 interface TagInputProps {
   tags: string[];
   onChange: (tags: string[]) => void;
   placeholder?: string;
-  suggestions?: string[]; // Optional existing tags for autocomplete
+  suggestions?: string[];
 }
 
-const TagInput: React.FC<TagInputProps> = ({ tags = [], onChange, placeholder = "输入标签后回车...", suggestions = [] }) => {
+const TagInput: React.FC<TagInputProps> = ({ tags = [], onChange, placeholder = '输入标签后回车...', suggestions = [] }) => {
   const [input, setInput] = useState('');
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -22,7 +21,7 @@ const TagInput: React.FC<TagInputProps> = ({ tags = [], onChange, placeholder = 
   };
 
   const addTag = () => {
-    const trimmed = input.trim().replace(/^#/, ''); // Remove # if user typed it
+    const trimmed = input.trim().replace(/^#/, '');
     if (trimmed && !tags.includes(trimmed)) {
       onChange([...tags, trimmed]);
       setInput('');
@@ -39,7 +38,7 @@ const TagInput: React.FC<TagInputProps> = ({ tags = [], onChange, placeholder = 
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2 p-2 border border-slate-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-shadow">
         <Tag size={16} className="text-slate-400 ml-1" />
-        
+
         {tags.map((tag, index) => (
           <span key={index} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100 animate-fade-in">
             #{tag}
@@ -58,13 +57,12 @@ const TagInput: React.FC<TagInputProps> = ({ tags = [], onChange, placeholder = 
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          onBlur={addTag} // Add on blur as well
+          onBlur={addTag}
           placeholder={tags.length === 0 ? placeholder : ''}
           className="flex-1 min-w-[120px] text-sm outline-none bg-transparent placeholder-slate-400 py-1"
         />
       </div>
-      
-      {/* Suggestions Helper (Simple implementation) */}
+
       {input && suggestions.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {suggestions

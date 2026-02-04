@@ -1,71 +1,56 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { requestJson } from '../utils/apiClient';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  token: string | null;
-  login: (accessCode: string, otp?: string) => Promise<{ success: boolean; require2fa?: boolean; error?: string }>;
-  logout: () => void;
   loading: boolean;
+  refreshAuth: () => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem('cloudtrack_access_token');
-    if (storedToken) {
-      setToken(storedToken);
-      setIsAuthenticated(true);
-    }
-    setLoading(false);
-  }, []);
-
-  const login = async (accessCode: string, otp?: string): Promise<{ success: boolean; require2fa?: boolean; error?: string }> => {
-    try {
-      const res = await fetch('/api/auth/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': accessCode
-        },
-        body: JSON.stringify({ otp })
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        // Success
-        localStorage.setItem('cloudtrack_access_token', accessCode);
-        setToken(accessCode);
-        setIsAuthenticated(true);
-        return { success: true };
-      } 
-      
-      // Handle 2FA Requirement
-      if (res.status === 202 && data.require2fa) {
-        return { success: false, require2fa: true };
-      }
-
-      return { success: false, error: data.error || '验证失败' };
-    } catch (e) {
-      console.error(e);
-      return { success: false, error: '网络请求错误' };
-    }
+  const isDevBypassEnabled = () => {
+    const flag = (import.meta as any).env?.VITE_DEV_BYPASS_ACCESS;
+    const isLocalhost = typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    return isLocalhost && (flag === 'true' || flag === '1');
   };
 
+  const refreshAuth = useCallback(async () => {
+    setLoading(true);
+    try {
+      if (isDevBypassEnabled()) {
+        setIsAuthenticated(true);
+        return;
+      }
+      const res = await requestJson<{ authenticated?: boolean }>(
+        '/api/auth/session',
+        { throwOnError: false, timeoutMs: 8000 }
+      );
+      setIsAuthenticated(Boolean(res.ok && res.data?.authenticated));
+    } catch (e) {
+      console.warn('Access session check failed', e);
+      setIsAuthenticated(false);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshAuth();
+  }, [refreshAuth]);
+
   const logout = () => {
-    localStorage.removeItem('cloudtrack_access_token');
-    setToken(null);
     setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, loading, refreshAuth, logout }}>
       {children}
     </AuthContext.Provider>
   );

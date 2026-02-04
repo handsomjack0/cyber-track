@@ -1,31 +1,32 @@
 
 import { Resource } from "../types/index";
+import { ApiError, requestJson } from "../utils/apiClient";
 
 const getHeaders = () => {
-  const token = localStorage.getItem('cloudtrack_access_token') || '';
   return {
-    'Content-Type': 'application/json',
-    'x-api-key': token
+    'Content-Type': 'application/json'
   };
 };
 
 export const analyzePortfolio = async (resources: Resource[]): Promise<string> => {
   try {
-    const response = await fetch('/api/ai/analyze', {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(resources),
-    });
+    const response = await requestJson<{ analysis?: string; error?: string }>(
+      '/api/ai/analyze',
+      {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(resources),
+        timeoutMs: 20000
+      }
+    );
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to analyze');
-    }
-
-    return data.analysis || "No analysis generated.";
+    return response.data?.analysis || "No analysis generated.";
   } catch (error) {
+    const message =
+      error instanceof ApiError
+        ? error.message
+        : "Failed to connect to analysis server. Please check your network or API configuration.";
     console.error("Gemini Service Error:", error);
-    return "Failed to connect to analysis server. Please check your network or API configuration.";
+    return message;
   }
 };

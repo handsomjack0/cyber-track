@@ -1,11 +1,6 @@
-
-import React, { useState } from 'react';
+﻿import React, { useState, Suspense } from 'react';
 import Sidebar from './components/layout/Sidebar';
-import DashboardView from './components/dashboard/DashboardView';
-import AnalyticsView from './components/analytics/AnalyticsView';
-import ResourceListView from './components/views/ResourceListView';
 import AddResourceModal from './components/resources/AddResourceModal';
-import SettingsView from './components/settings/SettingsView';
 import LoadingState from './components/common/LoadingState';
 import LoginView from './components/auth/LoginView';
 import { Resource, ResourceType } from './types/index';
@@ -13,15 +8,17 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useResourceManager } from './hooks/useResourceManager';
 
-// Separate content component to use Auth Context
+const DashboardView = React.lazy(() => import('./components/dashboard/DashboardView'));
+const AnalyticsView = React.lazy(() => import('./components/analytics/AnalyticsView'));
+const ResourceListView = React.lazy(() => import('./components/views/ResourceListView'));
+const SettingsView = React.lazy(() => import('./components/settings/SettingsView'));
+
 const AppContent: React.FC = () => {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
-  
-  // Logic separated into custom hook
-  const { resources, isLoading, addResource, updateResource, deleteResource } = useResourceManager();
-  
-  // Modal State
+
+  const { resources, isLoading, error, addResource, updateResource, deleteResource, refreshResources } = useResourceManager();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
 
@@ -73,9 +70,9 @@ const AppContent: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <DashboardView 
-            resources={resources} 
-            onOpenAddModal={openAddModal} 
+          <DashboardView
+            resources={resources}
+            onOpenAddModal={openAddModal}
             onEditResource={openEditModal}
             onDeleteResource={handleDelete}
           />
@@ -84,8 +81,8 @@ const AppContent: React.FC = () => {
         return <AnalyticsView resources={resources} />;
       case 'vps':
         return (
-          <ResourceListView 
-            title="VPS 实例" 
+          <ResourceListView
+            title="VPS 实例"
             subtitle="管理所有虚拟主机和云服务器"
             resources={resources}
             resourceType={ResourceType.VPS}
@@ -97,8 +94,8 @@ const AppContent: React.FC = () => {
         );
       case 'domains':
         return (
-          <ResourceListView 
-            title="域名资产" 
+          <ResourceListView
+            title="域名资产"
             subtitle="监控域名有效期及 SSL 证书"
             resources={resources}
             resourceType={ResourceType.DOMAIN}
@@ -110,8 +107,8 @@ const AppContent: React.FC = () => {
         );
       case 'accounts':
         return (
-          <ResourceListView 
-            title="账号管理" 
+          <ResourceListView
+            title="账号管理"
             subtitle="管理会员订阅、软件授权及其他账号服务"
             resources={resources}
             resourceType={ResourceType.ACCOUNT}
@@ -123,8 +120,8 @@ const AppContent: React.FC = () => {
         );
       case 'cellphones':
         return (
-          <ResourceListView 
-            title="手机号码" 
+          <ResourceListView
+            title="手机号码"
             subtitle="管理手机号码有效期及保号套餐"
             resources={resources}
             resourceType={ResourceType.PHONE_NUMBER}
@@ -138,9 +135,9 @@ const AppContent: React.FC = () => {
         return <SettingsView />;
       default:
         return (
-          <DashboardView 
-            resources={resources} 
-            onOpenAddModal={openAddModal} 
+          <DashboardView
+            resources={resources}
+            onOpenAddModal={openAddModal}
             onEditResource={openEditModal}
             onDeleteResource={handleDelete}
           />
@@ -149,16 +146,32 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      
-      <main className="flex-1 p-6 lg:p-10 overflow-y-auto h-screen relative scroll-smooth no-scrollbar">
-        {renderContent()}
-      </main>
+    <div className="relative min-h-screen transition-colors duration-300">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(59,130,246,0.10),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(99,102,241,0.10),transparent_45%)]" />
+      <div className="relative flex min-h-screen">
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      <AddResourceModal 
-        isOpen={isModalOpen} 
-        onClose={() => { setIsModalOpen(false); setEditingResource(null); }} 
+        <main className="flex-1 p-6 lg:p-10 overflow-y-auto h-screen relative scroll-smooth no-scrollbar">
+          {error && (
+            <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 flex items-center justify-between gap-4 shadow-sm">
+              <span>{error}</span>
+              <button
+                onClick={() => refreshResources()}
+                className="px-3 py-1 rounded-md bg-white border border-rose-200 text-rose-700 hover:bg-rose-100 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          <Suspense fallback={<LoadingState />}>
+            {renderContent()}
+          </Suspense>
+        </main>
+      </div>
+
+      <AddResourceModal
+        isOpen={isModalOpen}
+        onClose={() => { setIsModalOpen(false); setEditingResource(null); }}
         onSave={handleSaveResource}
         initialData={editingResource}
       />

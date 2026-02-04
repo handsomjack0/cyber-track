@@ -1,5 +1,4 @@
-
-import React from 'react';
+﻿import React from 'react';
 import { Server, Globe, Edit2, Smartphone, Key } from 'lucide-react';
 import { Resource, ResourceType, BillingCycle } from '../../types';
 import { getDaysRemaining, getStatusStyles } from '../../utils/resourceUtils';
@@ -23,22 +22,22 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
 
   const getIconClass = (type: ResourceType) => {
     switch (type) {
-      case ResourceType.VPS: return 'bg-black text-white dark:bg-white dark:text-slate-900';
-      case ResourceType.DOMAIN: return 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300';
-      case ResourceType.PHONE_NUMBER: return 'bg-teal-100 text-teal-600 dark:bg-teal-900/50 dark:text-teal-300';
-      case ResourceType.ACCOUNT: return 'bg-amber-100 text-amber-600 dark:bg-amber-900/50 dark:text-amber-300';
-      default: return 'bg-black text-white';
+      case ResourceType.VPS: return 'bg-slate-900 text-white dark:bg-white dark:text-slate-900';
+      case ResourceType.DOMAIN: return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200';
+      case ResourceType.PHONE_NUMBER: return 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-200';
+      case ResourceType.ACCOUNT: return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200';
+      default: return 'bg-slate-900 text-white';
     }
   };
 
   const getCycleLabel = (cycle?: BillingCycle) => {
-    if (!cycle) return '/y';
+    if (!cycle) return '/年';
     switch (cycle) {
-      case BillingCycle.MONTHLY: return '/mo';
-      case BillingCycle.QUARTERLY: return '/qtr';
-      case BillingCycle.YEARLY: return '/yr';
+      case BillingCycle.MONTHLY: return '/月';
+      case BillingCycle.QUARTERLY: return '/季';
+      case BillingCycle.YEARLY: return '/年';
       case BillingCycle.ONE_TIME: return '';
-      default: return '/y';
+      default: return '/年';
     }
   };
 
@@ -51,21 +50,19 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
         const isLifetime = days === null;
 
         return (
-          <div 
-            key={item.id} 
-            className={`group relative overflow-hidden rounded-3xl p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 border ${style.border} ${isExpired ? 'bg-slate-50 dark:bg-slate-900 opacity-75' : 'bg-white dark:bg-slate-900 shadow-lg'}`}
+          <div
+            key={item.id}
+            className={`group relative overflow-hidden rounded-3xl p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 border ${style.border} ${isExpired ? 'bg-slate-50 dark:bg-slate-900/60 opacity-80' : 'bg-white/90 dark:bg-slate-900/70 shadow-sm'}`}
           >
-            {/* Action Buttons (Visible on Hover) */}
             <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-               <button 
-                 onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                 className="p-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur border border-slate-200 dark:border-slate-700 shadow-sm text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-full transition-colors"
-               >
-                 <Edit2 size={14} />
-               </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                className="p-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur border border-slate-200 dark:border-slate-700 shadow-sm text-slate-500 dark:text-slate-400 hover:text-indigo-600 rounded-full transition-colors"
+              >
+                <Edit2 size={14} />
+              </button>
             </div>
 
-            {/* Header */}
             <div className="flex justify-between items-start mb-6">
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${getIconClass(item.type)}`}>
                 {getIcon(item.type)}
@@ -73,20 +70,18 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
               <div className={`w-2.5 h-2.5 rounded-full ${style.dot} shadow-sm ring-4 ring-white/50 dark:ring-slate-800`} />
             </div>
 
-            {/* Content */}
             <div className="mb-6">
               <div className="flex items-baseline gap-1">
-                <span className={`text-5xl font-bold tracking-tighter ${isExpired ? 'text-slate-400 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>
+                <span className={`text-5xl font-semibold tracking-tight ${isExpired ? 'text-slate-400 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>
                   {isLifetime ? '∞' : (isExpired ? 'Exp' : days)}
                 </span>
                 {!isExpired && !isLifetime && <span className="text-sm font-medium text-slate-400">天</span>}
               </div>
-              <p className={`text-sm font-medium mt-1 ${isExpired ? 'text-red-500' : 'text-slate-400'}`}>
+              <p className={`text-sm font-medium mt-1 ${isExpired ? 'text-rose-500' : 'text-slate-400'}`}>
                 {isExpired ? `已过期 ${Math.abs(days || 0)} 天` : isLifetime ? '长期有效' : '剩余有效期'}
               </p>
             </div>
 
-            {/* Tags (if any) */}
             {item.tags && item.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-4">
                 {item.tags.slice(0, 3).map(tag => (
@@ -98,37 +93,34 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
               </div>
             )}
 
-            {/* Privacy Note (Replacing hidden icon) */}
             {item.notes && (
               <div className="mb-4">
                 <PrivacyField content={item.notes} />
               </div>
             )}
 
-            {/* Footer */}
             <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-800 pt-4 mt-auto">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-0.5">{item.provider}</p>
                 <div className="flex items-center gap-1.5">
-                   <p className="font-semibold text-slate-700 dark:text-slate-200 truncate max-w-[120px]" title={item.name}>{item.name}</p>
+                  <p className="font-semibold text-slate-700 dark:text-slate-200 truncate max-w-[120px]" title={item.name}>{item.name}</p>
                 </div>
               </div>
               <div className="text-right">
-                 <p className="text-sm font-mono font-medium text-slate-500 dark:text-slate-400">
-                    {item.currency}{item.cost}
-                    <span className="text-xs opacity-50 ml-0.5">{getCycleLabel(item.billingCycle)}</span>
-                 </p>
+                <p className="text-sm font-mono font-medium text-slate-500 dark:text-slate-400">
+                  {item.currency}{item.cost}
+                  <span className="text-xs opacity-50 ml-0.5">{getCycleLabel(item.billingCycle)}</span>
+                </p>
               </div>
             </div>
 
-            {/* Progress Bar Decor */}
             <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-slate-100 dark:bg-slate-800">
-               {days !== null && (
-                 <div 
-                    className={`h-full ${days <= 7 ? 'bg-rose-500' : days <= 30 ? 'bg-amber-400' : 'bg-indigo-500'}`} 
-                    style={{ width: `${Math.max(5, Math.min(100, (365 - days) / 365 * 100))}%` }}
-                 />
-               )}
+              {days !== null && (
+                <div
+                  className={`h-full ${days <= 7 ? 'bg-rose-500' : days <= 30 ? 'bg-amber-400' : 'bg-indigo-500'}`}
+                  style={{ width: `${Math.max(5, Math.min(100, (365 - days) / 365 * 100))}%` }}
+                />
+              )}
             </div>
           </div>
         );
@@ -138,3 +130,4 @@ const CardView: React.FC<CardViewProps> = ({ resources, onEdit }) => {
 };
 
 export default CardView;
+

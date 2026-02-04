@@ -1,4 +1,4 @@
-
+﻿
 <!DOCTYPE html>
 <html lang="zh-CN">
   <head>
@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script>
       // Polyfill process for browser environment to prevent crash
       window.process = { env: {} };
@@ -18,8 +18,8 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              mono: ['JetBrains Mono', 'monospace'],
+              sans: ['Geist', 'ui-sans-serif', 'system-ui'],
+              mono: ['Geist Mono', 'ui-monospace', 'monospace'],
             },
             colors: {
               background: '#f8fafc',
@@ -39,13 +39,24 @@
       }
     </script>
     <style>
-      body {
-        /* Default light mode bg */
-        background-color: #f8fafc;
+      :root {
+        --c-bg: #f4f6fb;
+        --c-surface: #ffffff;
+        --c-ink: #0f172a;
+        --c-muted: #64748b;
+        --c-accent: #3b82f6;
+        --c-accent-2: #6366f1;
+        --c-ring: #bfdbfe;
       }
-      /* Dark mode bg override */
+      body {
+        background: radial-gradient(1200px 600px at 10% -10%, rgba(59, 130, 246, 0.12), transparent 60%),
+          radial-gradient(900px 500px at 90% 0%, rgba(99, 102, 241, 0.10), transparent 55%),
+          var(--c-bg);
+      }
       .dark body {
-        background-color: #0f172a;
+        background: radial-gradient(1200px 600px at 10% -10%, rgba(59, 130, 246, 0.18), transparent 60%),
+          radial-gradient(900px 500px at 90% 0%, rgba(99, 102, 241, 0.18), transparent 55%),
+          #0b1120;
       }
       
       /* Hide scrollbar for clean look in cards */
@@ -74,8 +85,9 @@
 }
 </script>
 </head>
-  <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased selection:bg-indigo-100 selection:text-indigo-700 dark:selection:bg-indigo-900 dark:selection:text-indigo-300 transition-colors duration-300">
+  <body class="text-slate-900 dark:text-slate-100 font-sans antialiased selection:bg-indigo-100 selection:text-indigo-900 dark:selection:bg-indigo-900 dark:selection:text-indigo-200 transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
+

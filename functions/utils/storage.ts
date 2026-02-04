@@ -16,6 +16,7 @@ export interface Env {
   API_SECRET: string;
   TELEGRAM_BOT_TOKEN?: string;
   API_KEY?: string; // Gemini API Key
+  ACCESS_MODE?: 'access-code' | 'cloudflare' | 'hybrid';
 }
 
 export type ResourceType = 'VPS' | 'DOMAIN' | 'PHONE_NUMBER' | 'ACCOUNT';
@@ -85,8 +86,19 @@ export function errorResponse(message: string, status = 400) {
 }
 
 export function checkAuth(request: Request, env: Env): boolean {
+  const accessMode = env.ACCESS_MODE || 'access-code';
+  const accessEmail =
+    request.headers.get('cf-access-authenticated-user-email') ||
+    request.headers.get('CF-Access-Authenticated-User-Email');
+
+  if ((accessMode === 'cloudflare' || accessMode === 'hybrid') && accessEmail) {
+    return true;
+  }
+
+  if (accessMode === 'cloudflare') return false;
+
   const apiKey = request.headers.get('x-api-key');
-  if (!env.API_SECRET) return true; 
+  if (!env.API_SECRET) return true;
   return apiKey === env.API_SECRET;
 }
 

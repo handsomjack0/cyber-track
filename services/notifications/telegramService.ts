@@ -1,13 +1,10 @@
-
-import { TelegramConfig } from '../../types';
+﻿import { TelegramConfig } from '../../types';
 
 export const sendTelegramTestMessage = async (config: TelegramConfig): Promise<boolean> => {
   if (!config.chatId) {
     throw new Error('Missing Chat ID');
   }
 
-  // Call our own backend function (Cloudflare Pages Function)
-  // The Bot Token is injected on the server side via environment variables
   const url = '/api/telegram';
 
   try {
@@ -18,7 +15,7 @@ export const sendTelegramTestMessage = async (config: TelegramConfig): Promise<b
       },
       body: JSON.stringify({
         chatId: config.chatId,
-        message: '🔔 <b>cyberTrack</b>: 这是一个测试通知。\n您的配置已成功连接 Cloudflare Pages Functions！'
+        message: '🔔 <b>cyberTrack</b>: 这是一条测试通知。\n已成功连接到 Cloudflare Pages Functions。'
       })
     });
 

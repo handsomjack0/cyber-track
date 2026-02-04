@@ -1,5 +1,6 @@
 
 import { AppSettings } from '../../types';
+import { requestJson } from '../../utils/apiClient';
 
 // Fallback default in case API fails or loading
 const DEFAULT_SETTINGS: AppSettings = {
@@ -18,13 +19,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   },
 };
 
-const getHeaders = () => {
-  const token = localStorage.getItem('cloudtrack_access_token') || '';
-  return {
-    'Content-Type': 'application/json',
-    'x-api-key': token
-  };
-};
+const getHeaders = () => ({
+  'Content-Type': 'application/json'
+});
 
 export const getSettings = async (): Promise<AppSettings> => {
   // 1. Try to get Local Storage first (for backup)
@@ -32,17 +29,21 @@ export const getSettings = async (): Promise<AppSettings> => {
   const localData = stored ? JSON.parse(stored) : null;
 
   try {
-    const res = await fetch('/api/v1/settings', { headers: getHeaders() });
-    
+    const res = await requestJson<AppSettings>('/api/v1/settings', {
+      headers: getHeaders(),
+      throwOnError: false,
+      timeoutMs: 10000
+    });
+
     if (res.status === 401) {
        // Silent fail on auth for settings, maybe just return default
        console.warn('Unauthorized fetch settings');
        return localData || DEFAULT_SETTINGS;
     }
 
-    if (!res.ok) throw new Error('Failed to fetch settings');
+    if (!res.ok || !res.data) throw new Error('Failed to fetch settings');
     
-    const apiData = await res.json();
+    const apiData = res.data;
     
     // INTELLIGENT MERGE STRATEGY
     const isApiDefault = !apiData.telegram.enabled && !apiData.telegram.chatId;
@@ -69,15 +70,16 @@ export const saveSettings = async (settings: AppSettings): Promise<void> => {
 
   // 2. Send to Backend
   try {
-    const res = await fetch('/api/v1/settings', {
+    const res = await requestJson<{ error?: string }>('/api/v1/settings', {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify(settings)
+      body: JSON.stringify(settings),
+      throwOnError: false,
+      timeoutMs: 10000
     });
     
     if (!res.ok) {
-       const errData = await res.json();
-       throw new Error(errData.description || 'Save failed on server');
+       throw new Error(res.data?.error || 'Save failed on server');
     }
   } catch (error) {
     console.error('Settings save error:', error);
