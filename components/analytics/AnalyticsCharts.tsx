@@ -25,7 +25,7 @@ const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#3b82f6'
 const TOP_PROVIDER_LIMIT = 5;
 const TOP_TAG_LIMIT = 8;
 
-const formatMonthLabel = (dateKey: string) => `${dateKey.split('-')[1]}ÔÂ`;
+const formatMonthLabel = (dateKey: string) => `${dateKey.split('-')[1]}æœˆ`;
 
 const buildNext12Months = () => {
   const now = new Date();
@@ -87,7 +87,7 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
     .sort((a, b) => b.value - a.value);
 
   if (untaggedCost > 0) {
-    costByTagRaw.push({ name: 'ÎŞ±êÇ©', value: untaggedCost });
+    costByTagRaw.push({ name: 'æ— æ ‡ç­¾', value: untaggedCost });
   }
 
   const totalCost = costByProviderRaw.reduce((a, b) => a + b.value, 0);
@@ -96,21 +96,21 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
     if (costByProviderRaw.length <= TOP_PROVIDER_LIMIT) return costByProviderRaw;
     const topItems = costByProviderRaw.slice(0, TOP_PROVIDER_LIMIT);
     const otherValue = costByProviderRaw.slice(TOP_PROVIDER_LIMIT).reduce((acc, item) => acc + item.value, 0);
-    return [...topItems, { name: 'ÆäËû', value: otherValue }];
+    return [...topItems, { name: 'å…¶ä»–', value: otherValue }];
   })();
 
   const costByTag = (() => {
     if (costByTagRaw.length <= TOP_TAG_LIMIT) return costByTagRaw;
     const topItems = costByTagRaw.slice(0, TOP_TAG_LIMIT);
     const otherValue = costByTagRaw.slice(TOP_TAG_LIMIT).reduce((acc, item) => acc + item.value, 0);
-    return [...topItems, { name: 'ÆäËû', value: otherValue }];
+    return [...topItems, { name: 'å…¶ä»–', value: otherValue }];
   })();
 
   const maxExpiry = Math.max(...expiryByMonth.map(item => item.count), 1);
   const peakMonths = expiryByMonth.filter(item => item.count === maxExpiry);
   const peakKeys = new Set(peakMonths.map(item => item.dateKey));
   const peakLabel = peakMonths.length
-    ? peakMonths.map(item => formatMonthLabel(item.dateKey)).join('¡¢')
+    ? peakMonths.map(item => formatMonthLabel(item.dateKey)).join('ã€')
     : '-';
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -126,15 +126,15 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
           {isValue ? (
             <>
               <p className="text-slate-500 dark:text-slate-400">
-                Äê·ÑÓÃ: £¤{Math.round(Number(value)).toLocaleString('zh-CN')}
+                å¹´è´¹ç”¨: ï¿¥{Math.round(Number(value)).toLocaleString('zh-CN')}
               </p>
               <p className="text-slate-500 dark:text-slate-400">
-                Õ¼±È: {percent ?? '0.0'}%
+                å æ¯”: {percent ?? '0.0'}%
               </p>
             </>
           ) : (
             <p className="text-slate-500 dark:text-slate-400">
-              µ½ÆÚÊıÁ¿: {value} Ïî
+              åˆ°æœŸæ•°é‡: {value} é¡¹
             </p>
           )}
         </div>
@@ -161,7 +161,7 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
         fontSize={10}
         fontWeight={600}
       >
-        ·åÖµ
+        å³°å€¼
       </text>
     );
   };
@@ -172,7 +172,7 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
         <div className="bg-white/90 dark:bg-slate-900/70 p-6 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col blueprint-card">
           <span className="blueprint-dimension" data-dim="PROVIDER" />
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">
-            ·şÎñÉÌ·ÑÓÃ·Ö²¼£¨ÕÛºÏÈËÃñ±Ò/Äê£©
+            æœåŠ¡å•†è´¹ç”¨åˆ†å¸ƒï¼ˆæŠ˜åˆäººæ°‘å¸/å¹´ï¼‰
           </h3>
           <div className="h-64 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
@@ -225,15 +225,15 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
               <div className="text-center">
                 <div className="text-xs text-slate-400 font-medium">Total Yearly</div>
                 <div className="text-xl font-bold text-slate-800 dark:text-white">
-                  £¤{totalCost.toLocaleString('zh-CN', { maximumFractionDigits: 0 })}
+                  ï¿¥{totalCost.toLocaleString('zh-CN', { maximumFractionDigits: 0 })}
                 </div>
               </div>
             </div>
             {topProvider && (
               <div className="absolute left-4 top-4 rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/60 px-3 py-2 text-xs shadow-sm">
-                <div className="text-slate-400">Top ·şÎñÉÌ</div>
+                <div className="text-slate-400">Top æœåŠ¡å•†</div>
                 <div className="text-slate-800 dark:text-slate-100 font-semibold">
-                  {topProvider.name} ¡¤ {topProviderPercent}%
+                  {topProvider.name} Â· {topProviderPercent}%
                 </div>
               </div>
             )}
@@ -252,7 +252,7 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
         <div className="bg-white/90 dark:bg-slate-900/70 p-6 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col blueprint-card">
           <span className="blueprint-dimension" data-dim="EXPIRY" />
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">
-            Î´À´ 12 ¸öÔÂµ½ÆÚ·Ö²¼
+            æœªæ¥ 12 ä¸ªæœˆåˆ°æœŸåˆ†å¸ƒ
           </h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -292,7 +292,7 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
             </ResponsiveContainer>
           </div>
           <div className="mt-auto text-xs text-center text-slate-400">
-            ·åÖµÔÂ·İ: {peakLabel} ¡¤ »ùÓÚµ±Ç°×ÊÔ´µ½ÆÚÈÕµÄÔÂ¶ÈÍ³¼Æ
+            å³°å€¼æœˆä»½: {peakLabel} Â· åŸºäºå½“å‰èµ„æºåˆ°æœŸæ—¥çš„æœˆåº¦ç»Ÿè®¡
           </div>
         </div>
       </div>
@@ -301,7 +301,7 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
         <div className="bg-white/90 dark:bg-slate-900/70 p-6 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col blueprint-card">
           <span className="blueprint-dimension" data-dim="TAGCOST" />
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">
-            TOP ±êÇ©³É±¾ÅÅĞĞ£¨ÕÛºÏÈËÃñ±Ò/Äê£©
+            TOP æ ‡ç­¾æˆæœ¬æ’è¡Œï¼ˆæŠ˜åˆäººæ°‘å¸/å¹´ï¼‰
           </h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -327,14 +327,14 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
                   background={{ fill: 'rgba(148,163,184,0.12)', radius: 6 }}
                 >
                   {costByTag.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.name === 'ÎŞ±êÇ©' ? '#94a3b8' : COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={entry.name === 'æ— æ ‡ç­¾' ? '#94a3b8' : COLORS[index % COLORS.length]} />
                   ))}
                   <LabelList
                     dataKey="value"
                     position="right"
                     fill="#94a3b8"
                     fontSize={10}
-                    formatter={(val: number) => `£¤${Math.round(val).toLocaleString('zh-CN')}`}
+                    formatter={(val: number) => `ï¿¥${Math.round(val).toLocaleString('zh-CN')}`}
                   />
                 </Bar>
               </BarChart>

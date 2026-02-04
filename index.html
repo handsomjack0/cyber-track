@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
       // Polyfill process for browser environment to prevent crash
       window.process = { env: {} };
@@ -18,8 +18,8 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['IBM Plex Mono', 'ui-monospace', 'monospace'],
-              mono: ['IBM Plex Mono', 'ui-monospace', 'monospace'],
+              sans: ['IBM Plex Mono', 'Noto Sans SC', 'ui-monospace', 'monospace'],
+              mono: ['IBM Plex Mono', 'Noto Sans SC', 'ui-monospace', 'monospace'],
             },
             colors: {
               background: '#f8fafc',
@@ -52,6 +52,7 @@
       }
       body.blueprint {
         color: var(--bp-ink);
+        font-family: 'IBM Plex Mono', 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'WenQuanYi Micro Hei', 'Noto Sans', monospace;
         background-color: var(--bp-bg);
         background-image:
           radial-gradient(circle at 1px 1px, var(--bp-grid-strong) 1px, transparent 0),
@@ -304,6 +305,10 @@
       .blueprint .no-scrollbar {
         -ms-overflow-style: none;
         scrollbar-width: none;
+      }
+
+      .blueprint svg text {
+        font-family: 'IBM Plex Mono', 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'WenQuanYi Micro Hei', 'Noto Sans', monospace;
       }
       
       /* Hide scrollbar for clean look in cards */
