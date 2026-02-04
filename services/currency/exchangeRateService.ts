@@ -1,5 +1,6 @@
 
 import { requestJson } from "../../utils/apiClient";
+
 interface ExchangeRates {
   [key: string]: number;
 }
@@ -18,52 +19,70 @@ const DEFAULT_RATES: ExchangeRates = {
   'JPY': 0.048
 };
 
-export const getExchangeRates = async (): Promise<ExchangeRates> => {
+export const getExchangeRates = async (): Promise<{ rates: ExchangeRates; source?: string; updatedAt?: string }> => {
   try {
     // 1. Check Local Cache
     const cached = localStorage.getItem(STORAGE_KEY);
     if (cached) {
       const { timestamp, rates } = JSON.parse(cached);
       if (Date.now() - timestamp < CACHE_DURATION) {
-        return rates;
+        return { rates, source: 'cache', updatedAt: new Date(timestamp).toISOString() };
       }
     }
 
-    // 2. Fetch from API (Using a free public API for demo purposes)
-    // We fetch base USD and convert to CNY base, or fetch base CNY directly if supported.
-    // frankfurter.app is open source and requires no key.
-    const response = await requestJson<{ rates: Record<string, number> }>(
-      'https://api.frankfurter.app/latest?from=CNY',
+    // 2. Fetch from server cache (preferred)
+    const response = await requestJson<{ rates: Record<string, number>; source?: string; updatedAt?: string }>(
+      '/api/v1/exchange-rates',
       { timeoutMs: 8000 }
     );
-    
+
     if (!response.ok || !response.data?.rates) throw new Error('Failed to fetch rates');
-    
-    // The API returns: 1 CNY = X USD. 
-    // We usually want: 1 USD = X CNY for easier calculation (Cost * Rate).
-    // So we invert the rates from the API, or easier: 
-    // Let's use the API rates directly to normalize everything to CNY.
-    // If API returns { rates: { USD: 0.138 } } means 1 CNY = 0.138 USD.
-    // To convert 100 USD to CNY: 100 / 0.138.
-    
-    // However, to keep our logic simple (Cost * Rate), let's pre-calculate the multiplier.
-    // Multiplier = 1 / API_Rate
-    
-    const processedRates: ExchangeRates = { 'CNY': 1 };
-    Object.entries(response.data.rates as Record<string, number>).forEach(([currency, rate]) => {
-      processedRates[currency] = 1 / rate;
-    });
+
+    const rates = response.data.rates as ExchangeRates;
+    const source = response.data.source;
+    const updatedAt = response.data.updatedAt;
 
     // 3. Save to Cache
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       timestamp: Date.now(),
-      rates: processedRates
+      rates
     }));
 
-    return processedRates;
+    return { rates, source, updatedAt };
 
   } catch (error) {
     console.warn('Currency fetch failed, using fallback rates', error);
-    return DEFAULT_RATES;
+    return { rates: DEFAULT_RATES, source: 'fallback', updatedAt: new Date().toISOString() };
   }
+};
+
+export const setExchangeRateOverride = async (rates: Record<string, number>): Promise<boolean> => {
+  const res = await requestJson<{ success?: boolean; error?: string }>(
+    '/api/v1/exchange-rates/override',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rates }),
+      timeoutMs: 10000
+    }
+  );
+  if (!res.ok) {
+    throw new Error(res.data?.error || 'Failed to save override');
+  }
+  return true;
+};
+
+export const clearExchangeRateOverride = async (): Promise<boolean> => {
+  const res = await requestJson<{ success?: boolean; error?: string }>(
+    '/api/v1/exchange-rates/override',
+    {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      timeoutMs: 10000
+    }
+  );
+  if (!res.ok) {
+    throw new Error(res.data?.error || 'Failed to clear override');
+  }
+  return true;
 };

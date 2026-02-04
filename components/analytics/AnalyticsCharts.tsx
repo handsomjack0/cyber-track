@@ -88,7 +88,8 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
   return (
     <div className="space-y-6 mb-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white/90 dark:bg-slate-900/70 p-6 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col">
+        <div className="bg-white/90 dark:bg-slate-900/70 p-6 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col blueprint-card">
+          <span className="blueprint-dimension" data-dim="PROVIDER" />
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">
             服务商费用分布（折合人民币/年）
           </h3>
@@ -131,7 +132,8 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
           </div>
         </div>
 
-        <div className="bg-white/90 dark:bg-slate-900/70 p-6 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col">
+        <div className="bg-white/90 dark:bg-slate-900/70 p-6 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col blueprint-card">
+          <span className="blueprint-dimension" data-dim="EXPIRY" />
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">
             未来 12 个月到期分布
           </h3>
@@ -171,7 +173,8 @@ const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ resources, rates }) =
       </div>
 
       {costByTag.length > 0 && (
-        <div className="bg-white/90 dark:bg-slate-900/70 p-6 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col">
+        <div className="bg-white/90 dark:bg-slate-900/70 p-6 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col blueprint-card">
+          <span className="blueprint-dimension" data-dim="TAGCOST" />
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">
             TOP 标签成本排行（折合人民币/年）
           </h3>

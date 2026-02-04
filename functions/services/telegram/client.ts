@@ -48,3 +48,26 @@ export async function setWebhook(token: string, webhookUrl: string): Promise<Tel
     return { ok: false, description: String(error) };
   }
 }
+
+export interface BotCommand {
+  command: string;
+  description: string;
+}
+
+/**
+ * Register bot commands so Telegram can show the "/" command menu.
+ */
+export async function setMyCommands(token: string, commands: BotCommand[]): Promise<TelegramApiResponse> {
+  const url = getApiUrl(token, 'setMyCommands');
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commands })
+    });
+    return await response.json() as TelegramApiResponse;
+  } catch (error) {
+    console.error('Telegram setMyCommands Error:', error);
+    return { ok: false, description: String(error) };
+  }
+}

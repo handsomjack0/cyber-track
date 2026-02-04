@@ -82,31 +82,36 @@ const DashboardView: React.FC<DashboardViewProps> = ({ resources, onOpenAddModal
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <div className="text-xs uppercase tracking-[0.2em] text-indigo-500 font-semibold">Dashboard</div>
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mt-1">资产概览</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mt-1 blueprint-title">资产概览</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">你的资产结构、到期风险与成本分布在这里一目了然。</p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={onOpenAddModal}
-            className="px-4 py-2.5 text-sm font-semibold bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-colors shadow-sm"
+            className="relative px-4 py-2.5 text-sm font-semibold bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-colors shadow-sm"
           >
+            <span className="blueprint-tag">A-01</span>
             + 新增资源
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white/90 dark:bg-slate-900/70 border border-white/60 dark:border-slate-800/60 rounded-2xl p-5 shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
+        <div className="blueprint-connector hidden md:block" />
+        <div className="bg-white/90 dark:bg-slate-900/70 border border-white/60 dark:border-slate-800/60 rounded-2xl p-5 shadow-sm blueprint-card">
+          <span className="blueprint-dimension" data-dim="W:240 H:120" />
           <div className="text-xs text-slate-400">总资产</div>
           <div className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{resources.length}</div>
           <div className="mt-2 text-xs text-slate-500">全部资源数量</div>
         </div>
-        <div className="bg-white/90 dark:bg-slate-900/70 border border-white/60 dark:border-slate-800/60 rounded-2xl p-5 shadow-sm">
+        <div className="bg-white/90 dark:bg-slate-900/70 border border-white/60 dark:border-slate-800/60 rounded-2xl p-5 shadow-sm blueprint-card">
+          <span className="blueprint-dimension" data-dim="W:240 H:120" />
           <div className="text-xs text-slate-400">预警</div>
           <div className="mt-2 text-2xl font-semibold text-amber-600">{urgentCount}</div>
           <div className="mt-2 text-xs text-slate-500">30 天内到期</div>
         </div>
-        <div className="bg-white/90 dark:bg-slate-900/70 border border-white/60 dark:border-slate-800/60 rounded-2xl p-5 shadow-sm">
+        <div className="bg-white/90 dark:bg-slate-900/70 border border-white/60 dark:border-slate-800/60 rounded-2xl p-5 shadow-sm blueprint-card">
+          <span className="blueprint-dimension" data-dim="W:240 H:120" />
           <div className="text-xs text-slate-400">已过期</div>
           <div className="mt-2 text-2xl font-semibold text-rose-500">{expiredCount}</div>
           <div className="mt-2 text-xs text-slate-500">需要立即处理</div>
@@ -144,7 +149,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ resources, onOpenAddModal
             onDirectionToggle={handleDirectionToggle}
           />
 
-          <div className="bg-white/90 dark:bg-slate-900/80 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center">
+          <div className="bg-white/90 dark:bg-slate-900/80 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center blueprint-card">
+            <span className="blueprint-dimension" data-dim="MODE" />
             <button
               onClick={() => setViewMode('card')}
               className={`p-2 rounded-xl transition-all ${viewMode === 'card' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}

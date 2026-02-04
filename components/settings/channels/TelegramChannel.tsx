@@ -49,8 +49,9 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
       const data = await response.json();
 
       if (data.ok) {
-        setSetupStatus('success');
-        setSetupMsg('Webhook 激活成功！');
+        const commandsOk = data.commands?.ok !== false;
+        setSetupStatus(commandsOk ? 'success' : 'error');
+        setSetupMsg(commandsOk ? 'Webhook 激活成功，并已注册指令菜单！' : `Webhook 成功，但指令菜单注册失败：${data.commands?.description || '请稍后重试'}`);
       } else {
         setSetupStatus('error');
         if (data.description?.includes('TELEGRAM_BOT_TOKEN')) {

@@ -8,6 +8,7 @@ import * as schema from '../db/schema';
 export interface KVNamespace {
   get(key: string): Promise<string | null>;
   put(key: string, value: string): Promise<void>;
+  delete?(key: string): Promise<void>;
 }
 
 export interface Env {
@@ -16,6 +17,15 @@ export interface Env {
   API_SECRET: string;
   TELEGRAM_BOT_TOKEN?: string;
   API_KEY?: string; // Gemini API Key
+  OPENAI_API_KEY?: string;
+  DEEPSEEK_API_KEY?: string;
+  OPENROUTER_API_KEY?: string;
+  OPENROUTER_SITE_URL?: string;
+  OPENROUTER_APP_TITLE?: string;
+  GITHUB_TOKEN?: string;
+  GITHUB_MODELS_URL?: string; // Full URL to GitHub Models chat completions endpoint
+  CUSTOM_AI_BASE_URL?: string; // Base URL for self-hosted OpenAI-compatible API
+  CUSTOM_AI_API_KEY?: string;
   ACCESS_MODE?: 'access-code' | 'cloudflare' | 'hybrid';
 }
 

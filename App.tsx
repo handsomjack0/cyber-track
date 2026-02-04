@@ -147,25 +147,48 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="relative min-h-screen transition-colors duration-300">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(59,130,246,0.10),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(99,102,241,0.10),transparent_45%)]" />
+      <div className="pointer-events-none absolute inset-0 blueprint-overlay" />
+      <div className="pointer-events-none absolute left-6 top-6 flex items-center gap-3 text-[10px] uppercase tracking-[0.35em] text-sky-300">
+        <div className="relative h-8 w-8">
+          <span className="absolute left-1/2 top-0 h-full w-px bg-sky-400/60" />
+          <span className="absolute left-0 top-1/2 h-px w-full bg-sky-400/60" />
+          <span className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 border border-sky-400/60" />
+        </div>
+        <span>Origin 0,0</span>
+      </div>
+      <div className="pointer-events-none absolute right-8 top-8 text-[10px] uppercase tracking-[0.3em] text-sky-300">
+        Grid 24px
+      </div>
+      <div className="pointer-events-none absolute right-8 bottom-8 flex items-center gap-3 text-[10px] uppercase tracking-[0.35em] text-sky-300">
+        <span>Scale 1:1</span>
+        <div className="relative h-8 w-8">
+          <span className="absolute left-1/2 top-0 h-full w-px bg-sky-400/60" />
+          <span className="absolute left-0 top-1/2 h-px w-full bg-sky-400/60" />
+          <span className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 border border-sky-400/60" />
+        </div>
+      </div>
       <div className="relative flex min-h-screen">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         <main className="flex-1 p-6 lg:p-10 overflow-y-auto h-screen relative scroll-smooth no-scrollbar">
-          {error && (
-            <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 flex items-center justify-between gap-4 shadow-sm">
-              <span>{error}</span>
-              <button
-                onClick={() => refreshResources()}
-                className="px-3 py-1 rounded-md bg-white border border-rose-200 text-rose-700 hover:bg-rose-100 transition-colors"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-          <Suspense fallback={<LoadingState />}>
-            {renderContent()}
-          </Suspense>
+          <div className="blueprint-canvas relative min-h-full">
+            <div className="blueprint-ruler top" />
+            <div className="blueprint-ruler left" />
+            {error && (
+              <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 flex items-center justify-between gap-4 shadow-sm">
+                <span>{error}</span>
+                <button
+                  onClick={() => refreshResources()}
+                  className="px-3 py-1 rounded-md bg-white border border-rose-200 text-rose-700 hover:bg-rose-100 transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            <Suspense fallback={<LoadingState />}>
+              {renderContent()}
+            </Suspense>
+          </div>
         </main>
       </div>
 

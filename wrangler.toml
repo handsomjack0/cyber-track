@@ -1,7 +1,15 @@
-
-name = "cybertrack"
+﻿name = "cybertrack"
 compatibility_date = "2024-02-08"
 pages_build_output_dir = "dist"
+
+[[triggers]]
+crons = ["0 1 * * *"]
+
+# KV (for exchange rate cache + manual override)
+# Create a KV namespace in Cloudflare and bind it here.
+[[kv_namespaces]]
+binding = "CLOUDTRACK_KV"
+id = "YOUR_KV_NAMESPACE_ID"
 
 # D1 数据库绑定
 # 【重要】请将 database_id 替换为您自己在 Cloudflare D1 创建的数据库 ID

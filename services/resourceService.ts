@@ -67,12 +67,12 @@ export const resourceService = {
     return true;
   },
 
-  importData: async (resources: Resource[]): Promise<boolean> => {
+  importData: async (resources: Resource[], mode: 'overwrite' | 'merge'): Promise<boolean> => {
     try {
       const res = await requestJson<{ error?: string }>(API_BULK, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ resources, mode: 'overwrite' }),
+        body: JSON.stringify({ resources, mode }),
         timeoutMs: 15000
       });
       if (!res.ok) throw new Error(res.data?.error || 'Import failed');

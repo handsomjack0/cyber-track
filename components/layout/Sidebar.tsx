@@ -19,10 +19,21 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   ];
 
   return (
-    <div className="w-20 lg:w-64 bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl border-r border-white/60 dark:border-slate-800/60 flex flex-col h-screen sticky top-0 z-20">
+    <div className="w-20 lg:w-64 bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl border-r border-white/60 dark:border-slate-800/60 flex flex-col h-screen sticky top-0 z-20 blueprint-card">
       <div className="p-6 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/20">
-          <Command size={18} />
+        <div className="w-9 h-9 rounded-xl border border-sky-400/40 bg-slate-900/60 text-sky-200 flex items-center justify-center shrink-0 shadow-sm">
+          <svg
+            viewBox="0 0 24 24"
+            className="w-5 h-5"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect x="2.5" y="2.5" width="19" height="19" rx="4" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M7 12h10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+            <path d="M12 7v10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+            <circle cx="12" cy="12" r="2.6" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M4.5 6.5h3M16.5 6.5h3M4.5 17.5h3M16.5 17.5h3" stroke="currentColor" strokeWidth="1" opacity="0.7" />
+          </svg>
         </div>
         <div className="hidden lg:block">
           <div className="font-semibold text-slate-900 dark:text-white tracking-tight">cyberTrack</div>
@@ -35,13 +46,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative border border-transparent ${
               activeTab === item.id
-                ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-200 font-semibold shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:bg-white/80 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100'
+                ? 'bg-sky-400/10 text-sky-100 border-sky-400/30 shadow-sm'
+                : 'text-slate-400 hover:bg-slate-900/40 hover:text-slate-100'
             }`}
           >
-            <div className={`${activeTab === item.id ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300'}`}>
+            <div className={`${activeTab === item.id ? 'text-sky-200' : 'text-slate-500 group-hover:text-slate-200'}`}>
               {item.icon}
             </div>
             <span className="hidden lg:block text-sm">{item.label}</span>
@@ -55,8 +66,17 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
 
       <div className="p-4 border-t border-white/60 dark:border-slate-800/60 flex items-center justify-between gap-2">
         <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/70 dark:hover:bg-slate-800/60 cursor-pointer transition-colors flex-1 overflow-hidden">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-sky-500 flex items-center justify-center text-xs text-white font-semibold shrink-0 shadow-md">
-            Admin
+          <div className="w-9 h-9 rounded-full border border-sky-400/40 bg-slate-900/60 text-sky-200 flex items-center justify-center text-xs font-semibold shrink-0 shadow-md">
+            <svg
+              viewBox="0 0 24 24"
+              className="w-4 h-4"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle cx="12" cy="9" r="3.2" stroke="currentColor" strokeWidth="1.2" />
+              <path d="M5.5 19c1.8-3.3 11.2-3.3 13 0" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+              <path d="M4.5 6.5h3M16.5 6.5h3" stroke="currentColor" strokeWidth="1" opacity="0.7" />
+            </svg>
           </div>
           <div className="hidden lg:flex flex-col overflow-hidden">
             <span className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate">Administrator</span>

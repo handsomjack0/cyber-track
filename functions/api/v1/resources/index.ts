@@ -1,7 +1,8 @@
 
-import { Env, getDb, jsonResponse, errorResponse, checkAuth } from '../../../utils/storage';
+import { Env, getDb, jsonResponse, errorResponse, checkAuth, getSettings } from '../../../utils/storage';
 import { resources } from '../../../db/schema';
 import { desc } from 'drizzle-orm';
+import { sendResourceChangeNotification } from '../../../services/notifications/sender';
 
 export const onRequestGet = async (context: { env: Env, request: Request }) => {
   if (!checkAuth(context.request, context.env)) {
@@ -51,6 +52,13 @@ export const onRequestPost = async (context: { env: Env, request: Request }) => 
 
     const db = getDb(context.env);
     await db.insert(resources).values(newResource).execute();
+
+    try {
+      const settings = await getSettings(context.env);
+      await sendResourceChangeNotification(context.env, 'created', newResource, settings);
+    } catch (notifyError) {
+      console.error('Create notify failed:', notifyError);
+    }
 
     return jsonResponse({ success: true, data: newResource }, 201);
   } catch (e) {

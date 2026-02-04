@@ -6,9 +6,10 @@ import { convertToCNY, calculateYearlyCost } from '../../../utils/currency/conve
 interface CostOverviewProps {
   resources: Resource[];
   rates: Record<string, number>;
+  rateMeta?: { source?: string; updatedAt?: string } | null;
 }
 
-const CostOverview: React.FC<CostOverviewProps> = ({ resources, rates }) => {
+const CostOverview: React.FC<CostOverviewProps> = ({ resources, rates, rateMeta }) => {
   const stats = resources.reduce((acc, curr) => {
     const yearlyRaw = calculateYearlyCost(curr);
     const yearlyCNY = convertToCNY(yearlyRaw, curr.currency, rates);
@@ -22,27 +23,27 @@ const CostOverview: React.FC<CostOverviewProps> = ({ resources, rates }) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-500/20">
+      <div className="bg-white/90 dark:bg-slate-900/70 rounded-2xl p-6 border border-white/60 dark:border-slate-800/60 shadow-sm blueprint-card">
+        <span className="blueprint-dimension" data-dim="MONTHLY" />
         <div className="flex items-start justify-between mb-4">
-          <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-            <Wallet size={20} className="text-white" />
+          <div className="p-2 rounded-lg border border-sky-400/40 bg-sky-400/10 text-sky-300">
+            <Wallet size={20} />
           </div>
-          <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded text-indigo-100">
-            预计支出
-          </span>
+          <span className="text-xs font-medium text-slate-400">预计支出</span>
         </div>
         <div>
-          <p className="text-indigo-100 text-sm font-medium mb-1">每月固定成本 (CNY)</p>
-          <h3 className="text-3xl font-bold tracking-tight">
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">每月固定成本 (CNY)</p>
+          <h3 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             ¥{stats.totalMonthly.toLocaleString('zh-CN', { maximumFractionDigits: 0 })}
             <span className="text-lg opacity-60 font-normal">.{(stats.totalMonthly % 1).toFixed(2).substring(2)}</span>
           </h3>
         </div>
       </div>
 
-      <div className="bg-white/90 dark:bg-slate-900/70 rounded-2xl p-6 border border-white/60 dark:border-slate-800/60 shadow-sm">
+      <div className="bg-white/90 dark:bg-slate-900/70 rounded-2xl p-6 border border-white/60 dark:border-slate-800/60 shadow-sm blueprint-card">
+        <span className="blueprint-dimension" data-dim="YEARLY" />
         <div className="flex items-start justify-between mb-4">
-          <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+          <div className="p-2 rounded-lg border border-sky-400/40 bg-sky-400/10 text-sky-300">
             <TrendingUp size={20} />
           </div>
           <span className="text-xs font-medium text-slate-400">Recurring</span>
@@ -58,20 +59,27 @@ const CostOverview: React.FC<CostOverviewProps> = ({ resources, rates }) => {
         </div>
       </div>
 
-      <div className="bg-white/90 dark:bg-slate-900/70 rounded-2xl p-6 border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col justify-between">
-        <div className="flex items-start justify-between mb-2">
-          <div className="p-2 bg-sky-100 dark:bg-sky-900/30 rounded-lg text-sky-600 dark:text-sky-400">
-            <RefreshCw size={20} />
+      <div className="bg-white/90 dark:bg-slate-900/70 rounded-2xl p-6 border border-white/60 dark:border-slate-800/60 shadow-sm flex flex-col justify-between blueprint-card">
+        <span className="blueprint-dimension" data-dim="FX" />
+          <div className="flex items-start justify-between mb-2">
+            <div className="p-2 rounded-lg border border-sky-400/40 bg-sky-400/10 text-sky-300">
+              <RefreshCw size={20} />
+            </div>
+            <span className="text-xs font-medium text-sky-200/80">实时汇率</span>
           </div>
-          <span className="text-xs font-medium text-slate-400">实时汇率</span>
-        </div>
 
         <div className="space-y-3">
           <p className="text-xs text-slate-500 dark:text-slate-400">基准货币: 人民币 (CNY)</p>
+          {rateMeta?.source && (
+            <p className="text-[11px] text-slate-400 mt-1">
+              来源: {rateMeta.source}
+              {rateMeta.updatedAt ? ` · 更新时间: ${new Date(rateMeta.updatedAt).toLocaleString()}` : ''}
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-2">
             {['USD', 'EUR', 'GBP', 'HKD'].map(code => (
-              <div key={code} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg">
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{code}</span>
+              <div key={code} className="flex items-center justify-between bg-slate-900/40 px-3 py-2 rounded-lg border border-sky-400/20">
+                <span className="text-xs font-bold text-sky-200/90">{code}</span>
                 <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
                   {rates[code] ? `≈${rates[code].toFixed(2)}` : '-'}
                 </span>

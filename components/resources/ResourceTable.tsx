@@ -108,7 +108,8 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
   };
 
   return (
-    <div className={`bg-white/90 dark:bg-slate-900/70 rounded-2xl ${!hideHeader ? 'border border-white/60 dark:border-slate-800/60 shadow-sm' : ''} overflow-visible`}>
+    <div className={`bg-white/90 dark:bg-slate-900/70 rounded-2xl ${!hideHeader ? 'border border-white/60 dark:border-slate-800/60 shadow-sm' : ''} overflow-visible blueprint-card`}>
+      <span className="blueprint-dimension" data-dim="TABLE" />
       {!hideHeader && (
         <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">{title}</h2>

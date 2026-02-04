@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { Resource } from '../../types';
-import { analyzePortfolio } from '../../services/geminiService';
+import { analyzePortfolio, AiProvider } from '../../services/geminiService';
 import { Sparkles, Bot, RefreshCw, ChevronRight, FileText, BarChart3 } from 'lucide-react';
 
 interface AIAssistantProps {
@@ -10,64 +10,192 @@ interface AIAssistantProps {
 const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [provider, setProvider] = useState<AiProvider>('openai');
+  const [model, setModel] = useState('gpt-4o-mini');
+  const [cacheNote, setCacheNote] = useState<string | null>(null);
+
+  const providerModels: Record<AiProvider, { label: string; value: string }[]> = {
+    openai: [
+      { label: 'gpt-4o-mini (推荐)', value: 'gpt-4o-mini' },
+      { label: 'gpt-4o', value: 'gpt-4o' },
+      { label: 'gpt-4.1-mini', value: 'gpt-4.1-mini' }
+    ],
+    deepseek: [
+      { label: 'deepseek-chat', value: 'deepseek-chat' },
+      { label: 'deepseek-reasoner', value: 'deepseek-reasoner' }
+    ],
+    openrouter: [
+      { label: 'openrouter/auto', value: 'openrouter/auto' },
+      { label: 'openai/gpt-4o-mini', value: 'openai/gpt-4o-mini' },
+      { label: 'deepseek/deepseek-chat', value: 'deepseek/deepseek-chat' }
+    ],
+    github: [
+      { label: 'gpt-4o-mini', value: 'gpt-4o-mini' },
+      { label: 'phi-3-mini', value: 'phi-3-mini' },
+      { label: 'mistral-small', value: 'mistral-small' }
+    ],
+    custom: [
+      { label: '自定义模型', value: 'custom-model' }
+    ],
+    gemini: [
+      { label: 'gemini-1.5-flash', value: 'gemini-1.5-flash' },
+      { label: 'gemini-1.5-pro', value: 'gemini-1.5-pro' }
+    ]
+  };
+
+  const handleProviderChange = (next: AiProvider) => {
+    setProvider(next);
+    const models = providerModels[next];
+    if (models && models.length > 0) {
+      setModel(models[0].value);
+    } else {
+      setModel('');
+    }
+  };
+
+  const hashResources = (items: Resource[]) => {
+    const input = JSON.stringify(items.map(r => ({
+      id: r.id,
+      name: r.name,
+      provider: r.provider,
+      expiryDate: r.expiryDate,
+      cost: r.cost,
+      currency: r.currency,
+      type: r.type,
+      status: r.status,
+      tags: r.tags || []
+    })));
+    let hash = 0;
+    for (let i = 0; i < input.length; i += 1) {
+      hash = (hash * 31 + input.charCodeAt(i)) | 0;
+    }
+    return String(hash);
+  };
+
+  const getCacheKey = () => `ai_analysis:${provider}:${model}:${hashResources(resources)}`;
+
+  const readCache = () => {
+    try {
+      const raw = localStorage.getItem(getCacheKey());
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { analysis: string; ts: number };
+      const age = Date.now() - parsed.ts;
+      const ttl = 24 * 60 * 60 * 1000;
+      if (age > ttl) return null;
+      return parsed;
+    } catch {
+      return null;
+    }
+  };
+
+  const writeCache = (text: string) => {
+    try {
+      localStorage.setItem(getCacheKey(), JSON.stringify({ analysis: text, ts: Date.now() }));
+    } catch {
+      // ignore storage errors
+    }
+  };
 
   const handleAnalyze = async () => {
     if (resources.length === 0) return;
     setLoading(true);
     setAnalysis(null);
+    setCacheNote(null);
     try {
-      const result = await analyzePortfolio(resources);
+      const result = await analyzePortfolio(resources, provider, model);
       setAnalysis(result);
+      writeCache(result);
     } catch (error) {
-      setAnalysis('无法生成分析报告，请稍后再试。');
+      const cached = readCache();
+      if (cached?.analysis) {
+        setAnalysis(cached.analysis);
+        setCacheNote('已显示上次缓存结果（当前请求失败）。');
+      } else {
+        setAnalysis('无法生成分析报告，请稍后再试。');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="bg-white/90 dark:bg-slate-900/70 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm overflow-hidden animate-fade-in">
-      <div className="p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-gradient-to-b from-indigo-50/60 to-white dark:from-indigo-900/10 dark:to-slate-900">
+    <div className="bg-white/90 dark:bg-slate-900/70 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm overflow-hidden animate-fade-in blueprint-card">
+      <span className="blueprint-dimension" data-dim="ASSIST" />
+      <div className="p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-slate-900/50 border-b border-slate-200/20">
         <div className="flex gap-5">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-sky-500 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/20 text-white transform transition-transform hover:scale-105">
-            <Sparkles size={28} />
+          <div className="w-12 h-12 rounded-xl border border-sky-400/40 bg-sky-400/10 text-sky-200 flex items-center justify-center shrink-0 shadow-sm">
+            <Sparkles size={24} />
           </div>
           <div className="space-y-1">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
               AI 资产顾问
               <span className="inline-flex items-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 uppercase ring-1 ring-inset ring-indigo-600/10">
-                Gemini
+                {provider.toUpperCase()}
               </span>
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm max-w-lg leading-relaxed">
-              深度分析你的 {resources.length} 个资源，提供成本优化建议、到期风险提醒与整合策略。
+              深度分析你的 {resources.length} 个资源，提供成本优化建议、到期风险提醒与整合策略。未配置的 AI 平台不会影响其他功能。
             </p>
+            {cacheNote && (
+              <p className="text-xs text-slate-400 mt-1">{cacheNote}</p>
+            )}
           </div>
         </div>
 
-        <button
-          onClick={handleAnalyze}
-          disabled={loading || resources.length === 0}
-          className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-200 flex items-center gap-2.5 shadow-sm overflow-hidden
-            ${loading || resources.length === 0
-              ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
-              : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5'
-            }`}
-        >
-          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-          {loading ? (
-            <>
-              <RefreshCw size={18} className="animate-spin" />
-              <span>分析中...</span>
-            </>
-          ) : (
-            <>
-              <Bot size={18} className={resources.length > 0 ? 'text-indigo-100' : ''} />
-              <span>{analysis ? '重新生成报告' : '开始分析'}</span>
-              <ChevronRight size={16} className="opacity-50 group-hover:translate-x-1 transition-transform" />
-            </>
-          )}
-        </button>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={provider}
+              onChange={(e) => handleProviderChange(e.target.value as AiProvider)}
+              className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30"
+            >
+              <option value="openai">OpenAI</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="github">GitHub Models</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="custom">自建公益站</option>
+              <option value="gemini">Gemini</option>
+            </select>
+            <div className="relative">
+              <input
+                list={`ai-models-${provider}`}
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder="输入模型名"
+                className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[200px]"
+              />
+              <datalist id={`ai-models-${provider}`}>
+                {providerModels[provider].map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </datalist>
+            </div>
+          </div>
+
+          <button
+            onClick={handleAnalyze}
+            disabled={loading || resources.length === 0}
+            className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-200 flex items-center gap-2.5 shadow-sm overflow-hidden
+              ${loading || resources.length === 0
+                ? 'bg-slate-800/60 text-slate-400 cursor-not-allowed'
+                : 'bg-sky-400/20 text-sky-100 border border-sky-400/40 hover:bg-sky-400/30 hover:shadow-md hover:-translate-y-0.5'
+              }`}
+          >
+            <div className="absolute inset-0 bg-sky-200/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+            {loading ? (
+              <>
+                <RefreshCw size={18} className="animate-spin" />
+                <span>分析中...</span>
+              </>
+            ) : (
+              <>
+                <Bot size={18} className={resources.length > 0 ? 'text-sky-200' : ''} />
+                <span>{analysis ? '重新生成报告' : '开始分析'}</span>
+                <ChevronRight size={16} className="opacity-50 group-hover:translate-x-1 transition-transform" />
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       <div className="h-px bg-slate-100 dark:bg-slate-800 w-full" />

@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
       // Polyfill process for browser environment to prevent crash
       window.process = { env: {} };
@@ -18,8 +18,8 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Geist', 'ui-sans-serif', 'system-ui'],
-              mono: ['Geist Mono', 'ui-monospace', 'monospace'],
+              sans: ['IBM Plex Mono', 'ui-monospace', 'monospace'],
+              mono: ['IBM Plex Mono', 'ui-monospace', 'monospace'],
             },
             colors: {
               background: '#f8fafc',
@@ -40,23 +40,248 @@
     </script>
     <style>
       :root {
-        --c-bg: #f4f6fb;
-        --c-surface: #ffffff;
-        --c-ink: #0f172a;
-        --c-muted: #64748b;
-        --c-accent: #3b82f6;
-        --c-accent-2: #6366f1;
-        --c-ring: #bfdbfe;
+        --bp-bg: #0f172a;
+        --bp-surface: rgba(11, 23, 44, 0.9);
+        --bp-surface-strong: rgba(8, 18, 36, 0.95);
+        --bp-ink: #e2f2ff;
+        --bp-muted: #8fb8d6;
+        --bp-line: #38bdf8;
+        --bp-line-soft: rgba(56, 189, 248, 0.35);
+        --bp-grid: rgba(56, 189, 248, 0.08);
+        --bp-grid-strong: rgba(56, 189, 248, 0.18);
       }
-      body {
-        background: radial-gradient(1200px 600px at 10% -10%, rgba(59, 130, 246, 0.12), transparent 60%),
-          radial-gradient(900px 500px at 90% 0%, rgba(99, 102, 241, 0.10), transparent 55%),
-          var(--c-bg);
+      body.blueprint {
+        color: var(--bp-ink);
+        background-color: var(--bp-bg);
+        background-image:
+          radial-gradient(circle at 1px 1px, var(--bp-grid-strong) 1px, transparent 0),
+          repeating-linear-gradient(0deg, var(--bp-grid) 0, var(--bp-grid) 1px, transparent 1px, transparent 24px),
+          repeating-linear-gradient(90deg, var(--bp-grid) 0, var(--bp-grid) 1px, transparent 1px, transparent 24px);
+        background-size: 24px 24px, 24px 24px, 24px 24px;
+        background-attachment: fixed;
       }
-      .dark body {
-        background: radial-gradient(1200px 600px at 10% -10%, rgba(59, 130, 246, 0.18), transparent 60%),
-          radial-gradient(900px 500px at 90% 0%, rgba(99, 102, 241, 0.18), transparent 55%),
-          #0b1120;
+      body.blueprint.blueprint-retro {
+        --bp-bg: #f2e8cf;
+        --bp-surface: rgba(248, 242, 224, 0.92);
+        --bp-surface-strong: rgba(242, 234, 210, 0.96);
+        --bp-ink: #3b2f1e;
+        --bp-muted: #7b6a55;
+        --bp-line: #5b4636;
+        --bp-line-soft: rgba(91, 70, 54, 0.35);
+        --bp-grid: rgba(91, 70, 54, 0.10);
+        --bp-grid-strong: rgba(91, 70, 54, 0.22);
+      }
+      .blueprint .blueprint-overlay {
+        background:
+          radial-gradient(600px 300px at 15% 10%, rgba(56, 189, 248, 0.12), transparent 60%),
+          radial-gradient(800px 500px at 85% 0%, rgba(56, 189, 248, 0.10), transparent 55%);
+      }
+      .blueprint [class*="border-"] {
+        border-color: var(--bp-line-soft) !important;
+        border-style: dashed !important;
+      }
+      .blueprint [class*="bg-white"],
+      .blueprint [class*="bg-slate-50"],
+      .blueprint [class*="bg-slate-100"],
+      .blueprint [class*="bg-slate-900"],
+      .blueprint [class*="bg-slate-800"] {
+        background-color: var(--bp-surface) !important;
+        color: var(--bp-ink);
+        backdrop-filter: blur(2px);
+      }
+      .blueprint .shadow-sm,
+      .blueprint .shadow-md,
+      .blueprint .shadow-lg,
+      .blueprint .shadow-xl {
+        box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.12), 0 12px 30px rgba(3, 8, 20, 0.45) !important;
+      }
+      .blueprint .blueprint-card {
+        position: relative;
+        border: 1px dashed var(--bp-line-soft) !important;
+        background: var(--bp-surface) !important;
+      }
+      .blueprint .blueprint-card::before,
+      .blueprint .blueprint-card::after {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border: 1px solid var(--bp-line-soft);
+      }
+      .blueprint .blueprint-card::before {
+        top: -6px;
+        left: -6px;
+        border-right: none;
+        border-bottom: none;
+      }
+      .blueprint .blueprint-card::after {
+        bottom: -6px;
+        right: -6px;
+        border-left: none;
+        border-top: none;
+      }
+      .blueprint .blueprint-dimension {
+        position: absolute;
+        top: -12px;
+        right: 14px;
+        font-size: 10px;
+        letter-spacing: 0.35em;
+        text-transform: uppercase;
+        color: var(--bp-muted);
+        background: var(--bp-surface-strong);
+        padding: 2px 6px;
+        border: 1px dashed var(--bp-line-soft);
+      }
+      .blueprint .blueprint-dimension::after {
+        content: attr(data-dim);
+      }
+      .blueprint .blueprint-canvas {
+        position: relative;
+      }
+      .blueprint .blueprint-ruler {
+        position: absolute;
+        pointer-events: none;
+        color: var(--bp-muted);
+        font-size: 10px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+      }
+      .blueprint .blueprint-ruler.top {
+        left: 0;
+        right: 0;
+        top: -14px;
+        height: 12px;
+        border-bottom: 1px dashed var(--bp-line-soft);
+        background-image: repeating-linear-gradient(
+          90deg,
+          rgba(56, 189, 248, 0.35) 0 1px,
+          transparent 1px 24px
+        );
+      }
+      .blueprint .blueprint-ruler.left {
+        top: 0;
+        bottom: 0;
+        left: -14px;
+        width: 12px;
+        border-right: 1px dashed var(--bp-line-soft);
+        background-image: repeating-linear-gradient(
+          0deg,
+          rgba(56, 189, 248, 0.35) 0 1px,
+          transparent 1px 24px
+        );
+      }
+      .blueprint .blueprint-tag {
+        position: absolute;
+        top: -10px;
+        left: 12px;
+        font-size: 10px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--bp-muted);
+        background: var(--bp-surface-strong);
+        border: 1px dashed var(--bp-line-soft);
+        padding: 2px 6px;
+      }
+      .blueprint .blueprint-title {
+        position: relative;
+        display: inline-block;
+        padding-right: 28px;
+      }
+      .blueprint .blueprint-title::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: -10px;
+        width: 140%;
+        height: 1px;
+        border-bottom: 1px dashed var(--bp-line-soft);
+      }
+      .blueprint .blueprint-title::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: -14px;
+        width: 6px;
+        height: 6px;
+        border: 1px solid var(--bp-line-soft);
+        background: var(--bp-surface-strong);
+        border-radius: 999px;
+      }
+      .blueprint .blueprint-connector {
+        position: absolute;
+        inset: -12px 12px auto 12px;
+        height: 24px;
+        pointer-events: none;
+      }
+      .blueprint .blueprint-connector::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        border-top: 1px dashed var(--bp-line-soft);
+      }
+      .blueprint .blueprint-connector::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 6px;
+        height: 6px;
+        margin-top: -3px;
+        border: 1px solid var(--bp-line-soft);
+        border-radius: 999px;
+        background: var(--bp-surface-strong);
+        box-shadow: calc(100% - 6px) 0 0 0 var(--bp-surface-strong), calc(100% - 6px) 0 0 1px var(--bp-line-soft);
+      }
+      .blueprint .text-slate-900,
+      .blueprint .text-slate-800,
+      .blueprint .text-slate-700,
+      .blueprint .text-white {
+        color: var(--bp-ink) !important;
+      }
+      .blueprint .text-slate-600,
+      .blueprint .text-slate-500,
+      .blueprint .text-slate-400 {
+        color: var(--bp-muted) !important;
+      }
+      .blueprint .text-indigo-700,
+      .blueprint .text-indigo-600,
+      .blueprint .text-sky-600,
+      .blueprint .text-blue-600 {
+        color: var(--bp-line) !important;
+      }
+      .blueprint .bg-indigo-600,
+      .blueprint .bg-sky-500,
+      .blueprint .bg-blue-600,
+      .blueprint .bg-indigo-700 {
+        background-color: rgba(56, 189, 248, 0.9) !important;
+        color: #04111f !important;
+        border-color: rgba(56, 189, 248, 0.7) !important;
+      }
+      .blueprint .bg-indigo-50,
+      .blueprint .bg-sky-50,
+      .blueprint .bg-blue-50 {
+        background-color: rgba(56, 189, 248, 0.12) !important;
+      }
+      .blueprint .ring-1,
+      .blueprint .ring-2 {
+        --tw-ring-color: var(--bp-line-soft) !important;
+      }
+      .blueprint .focus\\:ring-indigo-400\\/40:focus,
+      .blueprint .focus\\:ring-indigo-500:focus {
+        --tw-ring-color: var(--bp-line-soft) !important;
+      }
+      .blueprint .selection\\:bg-indigo-100::selection {
+        background: rgba(56, 189, 248, 0.25);
+        color: var(--bp-ink);
+      }
+      .blueprint .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .blueprint .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
       }
       
       /* Hide scrollbar for clean look in cards */
@@ -85,7 +310,7 @@
 }
 </script>
 </head>
-  <body class="text-slate-900 dark:text-slate-100 font-sans antialiased selection:bg-indigo-100 selection:text-indigo-900 dark:selection:bg-indigo-900 dark:selection:text-indigo-200 transition-colors duration-300">
+  <body class="blueprint font-sans antialiased selection:bg-indigo-100 selection:text-indigo-900 transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
