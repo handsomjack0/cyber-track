@@ -1,5 +1,4 @@
-
-import { GoogleGenAI } from "@google/genai";
+﻿import { GoogleGenAI } from '@google/genai';
 import { Env, jsonResponse, errorResponse, checkAuth, Resource } from '../../utils/storage';
 
 type Provider = 'openai' | 'deepseek' | 'openrouter' | 'github' | 'custom' | 'gemini';
@@ -195,12 +194,12 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     }
 
     return errorWithCode('Unsupported provider.', 'UNSUPPORTED_PROVIDER', 400);
-
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error("AI Backend Error:", message);
+    console.error('AI Backend Error:', message);
     return errorWithCode(`AI Backend Error: ${message}`, 'AI_BACKEND_ERROR', 500);
   }
 };
+
 const errorWithCode = (message: string, code: string, status = 400) =>
   jsonResponse({ success: false, error: message, error_code: code }, status);

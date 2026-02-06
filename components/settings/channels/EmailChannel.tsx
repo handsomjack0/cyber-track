@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Mail, Send, CheckCircle, AlertCircle, Loader2, Info } from 'lucide-react';
 import { EmailConfig } from '../../../types';
 import { sendEmailTestMessage } from '../../../services/notifications/emailService';
@@ -13,8 +13,14 @@ const EmailChannel: React.FC<EmailChannelProps> = ({ config, onChange }) => {
   const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const handleTest = async () => {
-    setTesting(true);
     setTestStatus('idle');
+    if (!config.email) {
+      setTestStatus('error');
+      alert('请先填写接收邮箱地址。');
+      return;
+    }
+
+    setTesting(true);
     try {
       await sendEmailTestMessage(config);
       setTestStatus('success');
@@ -66,9 +72,10 @@ const EmailChannel: React.FC<EmailChannelProps> = ({ config, onChange }) => {
                 onChange={(e) => onChange({ ...config, email: e.target.value })}
               />
               <button
+                type="button"
                 onClick={handleTest}
-                disabled={!config.email || testing}
-                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors
+                disabled={testing}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed
                   ${testStatus === 'success' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
                     testStatus === 'error' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' :
                     'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
