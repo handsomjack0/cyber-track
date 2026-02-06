@@ -27,7 +27,14 @@ export async function sendMessage(token: string, payload: SendMessagePayload): P
       body: JSON.stringify(payload),
     });
 
-    return await response.json() as TelegramApiResponse;
+    const data = await response.json() as TelegramApiResponse;
+    if (!response.ok || !data.ok) {
+      console.error('Telegram API sendMessage failed', {
+        status: response.status,
+        description: data.description
+      });
+    }
+    return data;
   } catch (error) {
     console.error('Telegram API Error:', error);
     return { ok: false, description: String(error) };
@@ -42,7 +49,14 @@ export async function setWebhook(token: string, webhookUrl: string): Promise<Tel
   
   try {
     const response = await fetch(url);
-    return await response.json() as TelegramApiResponse;
+    const data = await response.json() as TelegramApiResponse;
+    if (!response.ok || !data.ok) {
+      console.error('Telegram setWebhook failed', {
+        status: response.status,
+        description: data.description
+      });
+    }
+    return data;
   } catch (error) {
     console.error('Telegram Webhook Error:', error);
     return { ok: false, description: String(error) };
@@ -72,6 +86,16 @@ export interface BotCommandOptions {
   language_code?: string;
 }
 
+export interface WebhookInfo {
+  url?: string;
+  has_custom_certificate?: boolean;
+  pending_update_count?: number;
+  last_error_date?: number;
+  last_error_message?: string;
+  max_connections?: number;
+  ip_address?: string;
+}
+
 /**
  * Register bot commands so Telegram can show the "/" command menu.
  */
@@ -87,7 +111,14 @@ export async function setMyCommands(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ commands, ...options })
     });
-    return await response.json() as TelegramApiResponse;
+    const data = await response.json() as TelegramApiResponse;
+    if (!response.ok || !data.ok) {
+      console.error('Telegram setMyCommands failed', {
+        status: response.status,
+        description: data.description
+      });
+    }
+    return data;
   } catch (error) {
     console.error('Telegram setMyCommands Error:', error);
     return { ok: false, description: String(error) };
@@ -108,9 +139,37 @@ export async function getMyCommands(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...options })
     });
-    return await response.json() as TelegramApiResponse;
+    const data = await response.json() as TelegramApiResponse;
+    if (!response.ok || !data.ok) {
+      console.error('Telegram getMyCommands failed', {
+        status: response.status,
+        description: data.description
+      });
+    }
+    return data;
   } catch (error) {
     console.error('Telegram getMyCommands Error:', error);
+    return { ok: false, description: String(error) };
+  }
+}
+
+/**
+ * Fetch current webhook info for debugging.
+ */
+export async function getWebhookInfo(token: string): Promise<TelegramApiResponse<WebhookInfo>> {
+  const url = getApiUrl(token, 'getWebhookInfo');
+  try {
+    const response = await fetch(url);
+    const data = await response.json() as TelegramApiResponse<WebhookInfo>;
+    if (!response.ok || !data.ok) {
+      console.error('Telegram getWebhookInfo failed', {
+        status: response.status,
+        description: data.description
+      });
+    }
+    return data;
+  } catch (error) {
+    console.error('Telegram getWebhookInfo Error:', error);
     return { ok: false, description: String(error) };
   }
 }

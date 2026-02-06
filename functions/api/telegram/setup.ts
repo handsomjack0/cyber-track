@@ -24,8 +24,29 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     }
 
     // 2. Construct Webhook URL
-    // Ensure no trailing slash on origin and append correct path
-    const baseUrl = body.origin.replace(/\/$/, '');
+    // Prefer server-side override to avoid binding to localhost by mistake.
+    const rawBase = (env.PUBLIC_SITE_URL || body.origin || '').trim();
+    if (!rawBase) {
+      return new Response(JSON.stringify({ ok: false, description: "Missing webhook base URL." }), { status: 400 });
+    }
+
+    let baseUrl = rawBase.replace(/\/$/, '');
+    try {
+      const parsed = new URL(baseUrl);
+      const host = parsed.hostname.toLowerCase();
+      if (host === 'localhost' || host === '127.0.0.1') {
+        return new Response(JSON.stringify({
+          ok: false,
+          description: 'Webhook URL cannot be localhost. Please run this on a public domain or set PUBLIC_SITE_URL.'
+        }), { status: 400 });
+      }
+    } catch {
+      return new Response(JSON.stringify({
+        ok: false,
+        description: 'Invalid webhook base URL. Please check PUBLIC_SITE_URL or the client origin.'
+      }), { status: 400 });
+    }
+
     const webhookUrl = `${baseUrl}/api/webhook`;
 
     // 3. Call Telegram API (Webhook)

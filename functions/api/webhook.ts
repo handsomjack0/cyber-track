@@ -12,10 +12,19 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
   }
 
   try {
+    const reqId = request.headers.get('cf-ray') || 'unknown';
     const update = await request.json() as TelegramUpdate;
+    console.log('[tg:webhook] update received', {
+      reqId,
+      updateId: (update as any)?.update_id,
+      hasMessage: Boolean(update.message),
+      hasText: Boolean(update.message?.text),
+      chatId: update.message?.chat?.id
+    });
     
     // 2. Validate Update
     if (!update.message || !update.message.text) {
+      console.log('[tg:webhook] ignore non-text message', { reqId });
       return new Response('OK', { status: 200 }); // Ignore non-text messages
     }
 

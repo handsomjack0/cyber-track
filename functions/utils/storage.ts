@@ -31,6 +31,7 @@ export interface Env {
   RESEND_API_KEY?: string;
   RESEND_FROM?: string;
   ACCESS_MODE?: 'access-code' | 'cloudflare' | 'hybrid';
+  PUBLIC_SITE_URL?: string;
 }
 
 export type ResourceType = 'VPS' | 'DOMAIN' | 'PHONE_NUMBER' | 'ACCOUNT';

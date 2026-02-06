@@ -1,5 +1,4 @@
-
-import { Env, Resource, ResourceType } from '../../../utils/storage';
+﻿import { Env, Resource, ResourceType } from '../../../utils/storage';
 import { sendMessage } from '../client';
 import { formatResourceItem } from '../formatters/index';
 import { getDaysRemaining } from '../../../utils/time';
@@ -23,7 +22,7 @@ const formatResourceList = (list: Resource[], title: string): string => {
 export async function handleStatus(env: Env, chatId: number, resources: Resource[]) {
   const total = resources.length;
   if (total === 0) {
-    await sendMessage(env.TELEGRAM_BOT_TOKEN!, { chat_id: chatId, text: `📊 数据库为空。`, parse_mode: 'HTML' });
+    await sendMessage(env.TELEGRAM_BOT_TOKEN!, { chat_id: chatId, text: `📦 数据库为空。`, parse_mode: 'HTML' });
     return;
   }
 
@@ -37,15 +36,15 @@ export async function handleStatus(env: Env, chatId: number, resources: Resource
   const phoneCount = resources.filter(r => r.type === 'PHONE_NUMBER').length;
 
   const text = `📊 <b>系统状态概览</b>\n` +
-               `━━━━━━━━━━━━━━━━\n` +
+               `──────────────────────\n` +
                `📦 <b>总资产数:</b> ${total}\n` +
                `   ├ 🖥️ VPS: ${vpsCount}\n` +
                `   ├ 🌐 域名: ${domainCount}\n` +
                `   ├ 📱 号码: ${phoneCount}\n` +
-               `   └ 🔑 账号: ${accountCount}\n\n` +
-               `🚨 <b>已过期:</b> ${expired}\n` +
-               `⚠️ <b>30天内到期:</b> ${urgent}\n\n` +
-               `发送 /expiring 查看需处理项`;
+               `   └ 👤 账号: ${accountCount}\n\n` +
+               `❌ <b>已过期:</b> ${expired}\n` +
+               `⏳ <b>30天内到期:</b> ${urgent}\n\n` +
+               `发送 /expiring 查看需处理项目。`;
 
   await sendMessage(env.TELEGRAM_BOT_TOKEN!, { chat_id: chatId, text, parse_mode: 'HTML' });
 }
@@ -55,7 +54,7 @@ export async function handleExpiring(env: Env, chatId: number, resources: Resour
     .filter(r => r.expiryDate && getDaysRemaining(r.expiryDate) <= 30)
     .sort((a, b) => getDaysRemaining(a.expiryDate) - getDaysRemaining(b.expiryDate));
 
-  const text = formatResourceList(urgentList, '紧急/过期资产');
+  const text = formatResourceList(urgentList, '紧急到期资产');
   await sendMessage(env.TELEGRAM_BOT_TOKEN!, { chat_id: chatId, text, parse_mode: 'HTML' });
 }
 
@@ -69,7 +68,7 @@ export async function handleList(env: Env, chatId: number, resources: Resource[]
     // Map nice titles
     if (typeFilter === 'VPS') title = '🖥️ VPS 主机列表';
     if (typeFilter === 'DOMAIN') title = '🌐 域名列表';
-    if (typeFilter === 'ACCOUNT') title = '🔑 账号订阅列表';
+    if (typeFilter === 'ACCOUNT') title = '👤 账号订阅列表';
     if (typeFilter === 'PHONE_NUMBER') title = '📱 手机号码列表';
   }
   
@@ -82,7 +81,7 @@ export async function handleList(env: Env, chatId: number, resources: Resource[]
 
 export async function handleSearch(env: Env, chatId: number, resources: Resource[], query: string) {
   if (!query) {
-    await sendMessage(env.TELEGRAM_BOT_TOKEN!, { chat_id: chatId, text: '🔍 请提供搜索关键词，例如: <code>/search google</code>', parse_mode: 'HTML' });
+    await sendMessage(env.TELEGRAM_BOT_TOKEN!, { chat_id: chatId, text: '🔎 请提供搜索关键词，例如：<code>/search google</code>', parse_mode: 'HTML' });
     return;
   }
 
