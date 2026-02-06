@@ -24,7 +24,7 @@ const ExchangeRateSettings: React.FC = () => {
       setRates(next);
       setMeta({ source: data.source, updatedAt: data.updatedAt });
     } catch (e) {
-      setStatus({ type: 'error', msg: 'èŽ·å–æ±‡çŽ‡å¤±è´¥' });
+      setStatus({ type: 'error', msg: '»ñÈ¡»ãÂÊÊ§°Ü' });
     } finally {
       setLoading(false);
     }
@@ -37,19 +37,19 @@ const ExchangeRateSettings: React.FC = () => {
   const handleSave = async () => {
     try {
       await setExchangeRateOverride(rates);
-      setStatus({ type: 'success', msg: 'å·²ä¿å­˜è‡ªå®šä¹‰æ±‡çŽ‡ï¼ˆä¼˜å…ˆç”Ÿæ•ˆï¼‰' });
+      setStatus({ type: 'success', msg: 'ÒÑ±£´æ×Ô¶¨Òå»ãÂÊ£¨ÓÅÏÈÉúÐ§£©' });
     } catch (e: any) {
-      setStatus({ type: 'error', msg: e.message || 'ä¿å­˜å¤±è´¥' });
+      setStatus({ type: 'error', msg: e.message || '±£´æÊ§°Ü' });
     }
   };
 
   const handleClear = async () => {
     try {
       await clearExchangeRateOverride();
-      setStatus({ type: 'success', msg: 'å·²æ¸…é™¤è‡ªå®šä¹‰æ±‡çŽ‡ï¼Œæ¢å¤è‡ªåŠ¨æ›´æ–°' });
+      setStatus({ type: 'success', msg: 'ÒÑÇå³ý×Ô¶¨Òå»ãÂÊ£¬»Ö¸´×Ô¶¯¸üÐÂ' });
       await loadRates();
     } catch (e: any) {
-      setStatus({ type: 'error', msg: e.message || 'æ¸…é™¤å¤±è´¥' });
+      setStatus({ type: 'error', msg: e.message || 'Çå³ýÊ§°Ü' });
     }
   };
 
@@ -60,14 +60,14 @@ const ExchangeRateSettings: React.FC = () => {
           <Coins size={20} />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">æ±‡çŽ‡è®¾ç½®</h2>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">»ãÂÊÉèÖÃ</h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">
-            é»˜è®¤è‡ªåŠ¨æ›´æ–°ã€‚å¯é€‰æ‰‹åŠ¨è¦†ç›–ï¼Œé¿å… API ä¸ç¨³å®šå¸¦æ¥çš„æ³¢åŠ¨ã€‚
+            Ä¬ÈÏ×Ô¶¯¸üÐÂ¡£¿ÉÑ¡ÊÖ¶¯¸²¸Ç£¬±ÜÃâ API ²»ÎÈ¶¨´øÀ´µÄ²¨¶¯¡£
           </p>
           {meta?.source && (
             <p className="text-[11px] text-slate-400 mt-1">
-              å½“å‰æ¥æº: {meta.source}
-              {meta.updatedAt ? ` Â· æ›´æ–°æ—¶é—´: ${new Date(meta.updatedAt).toLocaleString()}` : ''}
+              µ±Ç°À´Ô´: {meta.source}
+              {meta.updatedAt ? ` ¡¤ ¸üÐÂÊ±¼ä: ${new Date(meta.updatedAt).toLocaleString()}` : ''}
             </p>
           )}
         </div>
@@ -76,7 +76,7 @@ const ExchangeRateSettings: React.FC = () => {
       {meta?.source === 'fallback' && (
         <div className="mb-4 p-3 rounded-lg bg-amber-50 text-amber-700 text-xs flex items-center gap-2">
           <AlertTriangle size={14} />
-          å½“å‰ä½¿ç”¨å›žé€€æ±‡çŽ‡ï¼Œå¯èƒ½ä¸æ˜¯æœ€æ–°ã€‚å¯ç‚¹å‡»â€œåˆ·æ–°â€é‡è¯•æˆ–æ‰‹åŠ¨è¦†ç›–ã€‚
+          µ±Ç°Ê¹ÓÃ»ØÍË»ãÂÊ£¬¿ÉÄÜ²»ÊÇ×îÐÂ¡£¿Éµã»÷¡°Ë¢ÐÂ¡±ÖØÊÔ»òÊÖ¶¯¸²¸Ç¡£
         </div>
       )}
 
@@ -101,21 +101,21 @@ const ExchangeRateSettings: React.FC = () => {
           className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-semibold shadow-sm flex items-center gap-2"
         >
           <Save size={16} />
-          ä¿å­˜è¦†ç›–
+          ±£´æ¸²¸Ç
         </button>
         <button
           onClick={handleClear}
           className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm font-semibold shadow-sm flex items-center gap-2"
         >
           <Trash2 size={16} />
-          æ¸…é™¤è¦†ç›–
+          Çå³ý¸²¸Ç
         </button>
         <button
           onClick={loadRates}
           className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-sm font-semibold shadow-sm flex items-center gap-2"
         >
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          åˆ·æ–°
+          Ë¢ÐÂ
         </button>
       </div>
 
