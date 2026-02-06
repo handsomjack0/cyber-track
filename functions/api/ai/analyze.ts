@@ -54,6 +54,11 @@ async function callOpenAICompatible(params: {
     })
   });
 
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`AI request failed (${response.status}): ${text || response.statusText}`);
+  }
+
   const data = await response.json() as ChatCompletionResponse;
   const text = data?.choices?.[0]?.message?.content;
   return text || '';
@@ -152,9 +157,12 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       if (!env.CUSTOM_AI_BASE_URL) {
         return errorWithCode('自建公益站地址未配置', 'MISSING_CUSTOM_BASE', 500);
       }
-      const base = env.CUSTOM_AI_BASE_URL.replace(/\/$/, '');
+      const raw = env.CUSTOM_AI_BASE_URL.trim();
+      const base = raw.replace(/\/$/, '');
+      const hasFullEndpoint = /\/chat\/completions$/i.test(base);
+      const url = hasFullEndpoint ? base : `${base}/v1/chat/completions`;
       const analysis = await callOpenAICompatible({
-        url: `${base}/v1/chat/completions`,
+        url,
         apiKey: env.CUSTOM_AI_API_KEY,
         model,
         prompt

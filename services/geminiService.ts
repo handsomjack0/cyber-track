@@ -24,7 +24,8 @@ export const analyzePortfolio = async (
       }
     );
 
-    return response.data?.analysis || "No analysis generated.";
+    if (response.data?.analysis) return response.data.analysis;
+    return 'AI ??????????????API ?????????';
   } catch (error) {
     if (error instanceof ApiError) {
       const code = (error.data as any)?.error_code as string | undefined;
