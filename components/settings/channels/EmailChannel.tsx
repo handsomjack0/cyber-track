@@ -23,7 +23,7 @@ const EmailChannel: React.FC<EmailChannelProps> = ({ config, onChange }) => {
       console.error(e);
       setTestStatus('error');
       if (e.message?.includes('RESEND_API_KEY') || e.message?.includes('RESEND_FROM')) {
-        alert('²âÊÔÊ§°Ü£ººó¶ËÎ´ÅäÖÃ RESEND_API_KEY / RESEND_FROM¡£ÇëÔÚ Cloudflare ÉèÖÃÖĞÌí¼Ó¡£');
+        alert('æµ‹è¯•å¤±è´¥ï¼šåç«¯æœªé…ç½® RESEND_API_KEY / RESEND_FROMã€‚è¯·åœ¨ Cloudflare è®¾ç½®ä¸­æ·»åŠ ã€‚');
       }
     } finally {
       setTesting(false);
@@ -38,8 +38,8 @@ const EmailChannel: React.FC<EmailChannelProps> = ({ config, onChange }) => {
             <Mail size={20} />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white">ÓÊ¼şÍ¨Öª</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">·¢ËÍÌáĞÑÖÁÖ¸¶¨ÓÊÏä£¨Resend API£©</p>
+            <h3 className="font-semibold text-slate-900 dark:text-white">é‚®ä»¶é€šçŸ¥</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">å‘é€æé†’è‡³æŒ‡å®šé‚®ç®±ï¼ˆResend APIï¼‰</p>
           </div>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
@@ -56,7 +56,7 @@ const EmailChannel: React.FC<EmailChannelProps> = ({ config, onChange }) => {
       {config.enabled && (
         <div className="space-y-4 animate-fade-in">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">½ÓÊÕÓÊÏäµØÖ·</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">æ¥æ”¶é‚®ç®±åœ°å€</label>
             <div className="flex gap-2">
               <input
                 type="email"
@@ -77,12 +77,12 @@ const EmailChannel: React.FC<EmailChannelProps> = ({ config, onChange }) => {
                   testStatus === 'success' ? <CheckCircle size={16} /> :
                   testStatus === 'error' ? <AlertCircle size={16} /> :
                   <Send size={16} />}
-                {testStatus === 'success' ? '·¢ËÍ³É¹¦' : testStatus === 'error' ? '·¢ËÍÊ§°Ü' : '·¢ËÍ²âÊÔ'}
+                {testStatus === 'success' ? 'å‘é€æˆåŠŸ' : testStatus === 'error' ? 'å‘é€å¤±è´¥' : 'å‘é€æµ‹è¯•'}
               </button>
             </div>
             <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500 dark:text-slate-400">
               <Info size={12} />
-              <span>ÓÊ¼şÓÉ Resend ·¢ËÍ£¬ÇëÈ·±£ºó¶ËÒÑÅäÖÃ RESEND_API_KEY Óë RESEND_FROM¡£</span>
+              <span>é‚®ä»¶ç”± Resend å‘é€ï¼Œè¯·ç¡®ä¿åç«¯å·²é…ç½® RESEND_API_KEY ä¸ RESEND_FROMã€‚</span>
             </div>
           </div>
         </div>

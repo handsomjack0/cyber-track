@@ -160,7 +160,7 @@ export async function handleAiMessage(
     const defaultModel = env.TELEGRAM_AI_MODEL || 'auto';
     await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
       chat_id: chatId,
-      text: `µ±Ç°Ä¬ÈÏ£º${defaultProvider} / ${defaultModel}\n¿ÉÓÃ provider£º${AI_PROVIDERS.join(', ')}`
+      text: `å½“å‰é»˜è®¤ï¼š${defaultProvider} / ${defaultModel}\nå¯ç”¨ providerï¼š${AI_PROVIDERS.join(', ')}`
     });
     return;
   }
@@ -172,7 +172,7 @@ export async function handleAiMessage(
   if (!picked) {
     await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
       chat_id: chatId,
-      text: 'AI Î´ÅäÖÃ¡£ÇëÔÚ»·¾³±äÁ¿ÖĞÉèÖÃ¿ÉÓÃµÄ API Key£¬²¢¿ÉÑ¡ÉèÖÃ TELEGRAM_AI_PROVIDER/TELEGRAM_AI_MODEL¡£'
+      text: 'AI æœªé…ç½®ã€‚è¯·åœ¨ç¯å¢ƒå˜é‡ä¸­è®¾ç½®å¯ç”¨çš„ API Keyï¼Œå¹¶å¯é€‰è®¾ç½® TELEGRAM_AI_PROVIDER/TELEGRAM_AI_MODELã€‚'
     });
     return;
   }
@@ -180,7 +180,7 @@ export async function handleAiMessage(
   if (options.source === 'command' && !question) {
     await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
       chat_id: chatId,
-      text: 'ÓÃ·¨£º/ai <ÎÊÌâ> »ò /ai <provider> <model> <ÎÊÌâ>\nÊ¾Àı£º/ai openai gpt-4o-mini ÄÄĞ©×Ê²ú¿ìµ½ÆÚ£¿\n²é¿´Ä¬ÈÏ£º/ai list'
+      text: 'ç”¨æ³•ï¼š/ai <é—®é¢˜> æˆ– /ai <provider> <model> <é—®é¢˜>\nç¤ºä¾‹ï¼š/ai openai gpt-4o-mini å“ªäº›èµ„äº§å¿«åˆ°æœŸï¼Ÿ\næŸ¥çœ‹é»˜è®¤ï¼š/ai list'
     });
     return;
   }
@@ -188,7 +188,7 @@ export async function handleAiMessage(
   if (parsed.provider && parsed.provider !== picked.provider) {
     await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
       chat_id: chatId,
-      text: `Î´ÅäÖÃ ${parsed.provider} µÄ Key£¬Çë»»ÆäËû provider¡£`
+      text: `æœªé…ç½® ${parsed.provider} çš„ Keyï¼Œè¯·æ¢å…¶ä»– providerã€‚`
     });
     return;
   }
@@ -216,13 +216,13 @@ export async function handleAiMessage(
       });
     }
 
-    const safeReply = reply?.trim() || '±§Ç¸£¬ÎÒÔİÊ±Ã»ÓĞÕÒµ½ºÏÊÊµÄ´ğ¸´¡£Äã¿ÉÒÔÊÔÊÔ /help »ò /status¡£';
+    const safeReply = reply?.trim() || 'æŠ±æ­‰ï¼Œæˆ‘æš‚æ—¶æ²¡æœ‰æ‰¾åˆ°åˆé€‚çš„ç­”å¤ã€‚ä½ å¯ä»¥è¯•è¯• /help æˆ– /statusã€‚';
     await sendMessage(env.TELEGRAM_BOT_TOKEN!, { chat_id: chatId, text: safeReply });
   } catch (error) {
     console.error('Telegram AI Error:', error);
     await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
       chat_id: chatId,
-      text: 'AI ÔİÊ±²»¿ÉÓÃ£¬ÇëÉÔºóÖØÊÔ£¬»òÊ¹ÓÃ /help /status µÈÖ¸Áî¡£'
+      text: 'AI æš‚æ—¶ä¸å¯ç”¨ï¼Œè¯·ç¨åé‡è¯•ï¼Œæˆ–ä½¿ç”¨ /help /status ç­‰æŒ‡ä»¤ã€‚'
     });
   }
 }
