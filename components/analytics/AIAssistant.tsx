@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+ï»¿import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Resource } from '../../types';
@@ -18,7 +18,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
 
   const providerModels: Record<AiProvider, { label: string; value: string }[]> = {
     openai: [
-      { label: 'gpt-4o-mini (ÍÆ¼ö)', value: 'gpt-4o-mini' },
+      { label: 'gpt-4o-mini (æ¨è)', value: 'gpt-4o-mini' },
       { label: 'gpt-4o', value: 'gpt-4o' },
       { label: 'gpt-4.1-mini', value: 'gpt-4.1-mini' }
     ],
@@ -37,7 +37,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
       { label: 'mistral-small', value: 'mistral-small' }
     ],
     custom: [
-      { label: '×Ô¶¨ÒåÄ£ĞÍ', value: 'custom-model' }
+      { label: 'è‡ªå®šä¹‰æ¨¡å‹', value: 'custom-model' }
     ],
     gemini: [
       { label: 'gemini-1.5-flash', value: 'gemini-1.5-flash' },
@@ -111,9 +111,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
       const cached = readCache();
       if (cached?.analysis) {
         setAnalysis(cached.analysis);
-        setCacheNote('ÒÑÏÔÊ¾ÉÏ´Î»º´æ½á¹û£¨µ±Ç°ÇëÇóÊ§°Ü£©¡£');
+        setCacheNote('å·²æ˜¾ç¤ºä¸Šæ¬¡ç¼“å­˜ç»“æœï¼ˆå½“å‰è¯·æ±‚å¤±è´¥ï¼‰ã€‚');
       } else {
-        setAnalysis('ÎŞ·¨Éú³É·ÖÎö±¨¸æ£¬ÇëÉÔºóÔÙÊÔ¡£');
+        setAnalysis('æ— æ³•ç”Ÿæˆåˆ†ææŠ¥å‘Šï¼Œè¯·ç¨åå†è¯•ã€‚');
       }
     } finally {
       setLoading(false);
@@ -130,13 +130,13 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
           </div>
           <div className="space-y-1">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-              AI ×Ê²ú¹ËÎÊ
+              AI èµ„äº§é¡¾é—®
               <span className="inline-flex items-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 uppercase ring-1 ring-inset ring-indigo-600/10">
                 {provider.toUpperCase()}
               </span>
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm max-w-lg leading-relaxed">
-              Éî¶È·ÖÎöÄãµÄ {resources.length} ¸ö×ÊÔ´£¬Ìá¹©³É±¾ÓÅ»¯½¨Òé¡¢µ½ÆÚ·çÏÕÌáĞÑÓëÕûºÏ²ßÂÔ¡£Î´ÅäÖÃµÄ AI Æ½Ì¨²»»áÓ°ÏìÆäËû¹¦ÄÜ¡£
+              æ·±åº¦åˆ†æä½ çš„ {resources.length} ä¸ªèµ„æºï¼Œæä¾›æˆæœ¬ä¼˜åŒ–å»ºè®®ã€åˆ°æœŸé£é™©æé†’ä¸æ•´åˆç­–ç•¥ã€‚æœªé…ç½®çš„ AI å¹³å°ä¸ä¼šå½±å“å…¶ä»–åŠŸèƒ½ã€‚
             </p>
             {cacheNote && (
               <p className="text-xs text-slate-400 mt-1">{cacheNote}</p>
@@ -155,7 +155,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
               <option value="deepseek">DeepSeek</option>
               <option value="github">GitHub Models</option>
               <option value="openrouter">OpenRouter</option>
-              <option value="custom">×Ô½¨¹«ÒæÕ¾</option>
+              <option value="custom">è‡ªå»ºå…¬ç›Šç«™</option>
               <option value="gemini">Gemini</option>
             </select>
             <div className="relative">
@@ -163,7 +163,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
                 list={`ai-models-${provider}`}
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                placeholder="ÊäÈëÄ£ĞÍÃû"
+                placeholder="è¾“å…¥æ¨¡å‹å"
                 className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[200px]"
               />
               <datalist id={`ai-models-${provider}`}>
@@ -187,12 +187,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
             {loading ? (
               <>
                 <RefreshCw size={18} className="animate-spin" />
-                <span>·ÖÎöÖĞ...</span>
+                <span>åˆ†æä¸­...</span>
               </>
             ) : (
               <>
                 <Bot size={18} className={resources.length > 0 ? 'text-sky-200' : ''} />
-                <span>{analysis ? 'ÖØĞÂÉú³É±¨¸æ' : '¿ªÊ¼·ÖÎö'}</span>
+                <span>{analysis ? 'é‡æ–°ç”ŸæˆæŠ¥å‘Š' : 'å¼€å§‹åˆ†æ'}</span>
                 <ChevronRight size={16} className="opacity-50 group-hover:translate-x-1 transition-transform" />
               </>
             )}
@@ -211,8 +211,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
               <Bot size={24} className="absolute inset-0 m-auto text-indigo-500" />
             </div>
             <div className="space-y-2">
-              <p className="text-slate-900 dark:text-white font-medium">ÕıÔÚÉú³É·ÖÎö±¨¸æ...</p>
-              <p className="text-slate-400 text-xs">ÕıÔÚÇëÇó Gemini Ä£ĞÍ·ÖÎöÄãµÄ×Ê²ú×éºÏ</p>
+              <p className="text-slate-900 dark:text-white font-medium">æ­£åœ¨ç”Ÿæˆåˆ†ææŠ¥å‘Š...</p>
+              <p className="text-slate-400 text-xs">æ­£åœ¨è¯·æ±‚ Gemini æ¨¡å‹åˆ†æä½ çš„èµ„äº§ç»„åˆ</p>
             </div>
           </div>
         )}
@@ -222,9 +222,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
             <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center mb-5 text-slate-300 dark:text-slate-600">
               <BarChart3 size={40} />
             </div>
-            <p className="text-slate-500 dark:text-slate-400 font-medium">ÔİÎŞ·ÖÎö±¨¸æ</p>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">æš‚æ— åˆ†ææŠ¥å‘Š</p>
             <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">
-              µã»÷ÉÏ·½°´Å¥£¬»ñµÃ AI Çı¶¯µÄÓÅ»¯½¨Òé¡£
+              ç‚¹å‡»ä¸Šæ–¹æŒ‰é’®ï¼Œè·å¾— AI é©±åŠ¨çš„ä¼˜åŒ–å»ºè®®ã€‚
             </p>
           </div>
         )}
@@ -237,8 +237,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
                   <FileText size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">×Ê²ú·ÖÎö±¨¸æ</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">»ùÓÚÊµÊ±Êı¾İÉú³É</p>
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">èµ„äº§åˆ†ææŠ¥å‘Š</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">åŸºäºå®æ—¶æ•°æ®ç”Ÿæˆ</p>
                 </div>
                 <span className="text-xs text-slate-400 ml-auto font-mono bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
                   {new Date().toLocaleDateString()}
@@ -246,7 +246,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
               </div>
 
               <div className="prose prose-slate dark:prose-invert prose-sm max-w-none">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>`n                  {analysis}`n                </ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {analysis}
+                </ReactMarkdown>
               </div>
             </div>
           </div>
@@ -257,5 +259,3 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
 };
 
 export default AIAssistant;
-
-

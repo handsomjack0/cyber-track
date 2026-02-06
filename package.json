@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "npm run lint:encoding && vite build",
+    "preview": "vite preview",
+    "lint:encoding": "node scripts/encoding/scan.js"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20240215.0",
