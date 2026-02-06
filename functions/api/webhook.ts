@@ -10,6 +10,13 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
   if (!env.TELEGRAM_BOT_TOKEN) {
     return new Response('Server Error: Bot Token Missing', { status: 500 });
   }
+  if (env.TELEGRAM_WEBHOOK_SECRET) {
+    const provided = request.headers.get('x-telegram-bot-api-secret-token');
+    if (!provided || provided !== env.TELEGRAM_WEBHOOK_SECRET) {
+      console.warn('[tg:webhook] invalid secret token');
+      return new Response('Unauthorized', { status: 401 });
+    }
+  }
 
   try {
     const reqId = request.headers.get('cf-ray') || 'unknown';

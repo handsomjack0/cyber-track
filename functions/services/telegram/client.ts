@@ -44,8 +44,13 @@ export async function sendMessage(token: string, payload: SendMessagePayload): P
 /**
  * Set webhook for the bot
  */
-export async function setWebhook(token: string, webhookUrl: string): Promise<TelegramApiResponse> {
-  const url = `${getApiUrl(token, 'setWebhook')}?url=${encodeURIComponent(webhookUrl)}`;
+export async function setWebhook(
+  token: string,
+  webhookUrl: string,
+  secretToken?: string
+): Promise<TelegramApiResponse> {
+  const secret = secretToken ? `&secret_token=${encodeURIComponent(secretToken)}` : '';
+  const url = `${getApiUrl(token, 'setWebhook')}?url=${encodeURIComponent(webhookUrl)}${secret}`;
   
   try {
     const response = await fetch(url);

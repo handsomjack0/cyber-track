@@ -32,6 +32,7 @@ export interface Env {
   RESEND_FROM?: string;
   ACCESS_MODE?: 'access-code' | 'cloudflare' | 'hybrid';
   PUBLIC_SITE_URL?: string;
+  TELEGRAM_WEBHOOK_SECRET?: string;
 }
 
 export type ResourceType = 'VPS' | 'DOMAIN' | 'PHONE_NUMBER' | 'ACCOUNT';

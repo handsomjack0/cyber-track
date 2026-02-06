@@ -50,7 +50,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     const webhookUrl = `${baseUrl}/api/webhook`;
 
     // 3. Call Telegram API (Webhook)
-    const result = await setWebhook(env.TELEGRAM_BOT_TOKEN, webhookUrl);
+    const result = await setWebhook(env.TELEGRAM_BOT_TOKEN, webhookUrl, env.TELEGRAM_WEBHOOK_SECRET);
 
     if (!result.ok) {
       return new Response(JSON.stringify(result), {
