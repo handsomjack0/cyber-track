@@ -2,7 +2,7 @@ name = "cybertrack"
 compatibility_date = "2024-02-08"
 pages_build_output_dir = "dist"
 
-[[triggers]]
+[triggers]
 crons = ["0 1 * * *"]
 
 # KV (for exchange rate cache + manual override)
