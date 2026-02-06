@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+﻿import { GoogleGenAI } from '@google/genai';
 import { Env, getResources, Resource } from '../../../utils/storage';
 import { sendMessage } from '../client';
 
@@ -6,8 +6,29 @@ type AiProvider = 'openai' | 'deepseek' | 'openrouter' | 'github' | 'custom' | '
 const AI_PROVIDERS: AiProvider[] = ['openai', 'deepseek', 'openrouter', 'github', 'custom', 'gemini'];
 
 interface ChatCompletionResponse {
-  choices?: Array<{ message?: { content?: string } }>;
+  choices?: Array<{ message?: { content?: string }; text?: string }>;
 }
+
+type CustomEndpoint = {
+  id: string;
+  url: string;
+  key?: string;
+  defaultModel?: string;
+};
+
+const parseCustomEndpoints = (raw?: string): CustomEndpoint[] => {
+  if (!raw) return [];
+  return raw
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      const [id, url, key, defaultModel] = line.split('|').map(s => s?.trim());
+      if (!id || !url) return null;
+      return { id, url, key, defaultModel };
+    })
+    .filter((v): v is CustomEndpoint => Boolean(v));
+};
 
 const buildPrompt = (resources: Resource[], userText: string) => `
 You are the cyberTrack Telegram assistant. You help the user understand and manage IT assets.
@@ -32,8 +53,10 @@ async function callOpenAICompatible(params: {
   model: string;
   prompt: string;
   extraHeaders?: Record<string, string>;
+  mode?: 'chat' | 'completion';
 }) {
   const { url, apiKey, model, prompt, extraHeaders } = params;
+  const mode = params.mode ?? 'chat';
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -41,15 +64,24 @@ async function callOpenAICompatible(params: {
       ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
       ...(extraHeaders || {})
     },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: 'You are a helpful IT asset advisor.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.4,
-      max_tokens: 500
-    })
+    body: JSON.stringify(
+      mode === 'chat'
+        ? {
+            model,
+            messages: [
+              { role: 'system', content: 'You are a helpful IT asset advisor.' },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.4,
+            max_tokens: 500
+          }
+        : {
+            model,
+            prompt,
+            temperature: 0.4,
+            max_tokens: 500
+          }
+    )
   });
 
   if (!response.ok) {
@@ -57,8 +89,8 @@ async function callOpenAICompatible(params: {
     throw new Error(`AI request failed (${response.status}): ${text || response.statusText}`);
   }
 
-  const data = await response.json() as ChatCompletionResponse;
-  const text = data?.choices?.[0]?.message?.content;
+  const data = (await response.json()) as ChatCompletionResponse;
+  const text = mode === 'chat' ? data?.choices?.[0]?.message?.content : data?.choices?.[0]?.text;
   return text || '';
 }
 
@@ -92,16 +124,37 @@ function buildProviderConfig(env: Env, provider: AiProvider) {
         extraHeaders: { Accept: 'application/vnd.github+json' }
       };
     case 'custom': {
-      if (!env.CUSTOM_AI_BASE_URL) return null;
-      const raw = env.CUSTOM_AI_BASE_URL.trim();
-      const base = raw.replace(/\/$/, '');
-      const hasFullEndpoint = /\/chat\/completions$/i.test(base);
-      const url = hasFullEndpoint ? base : `${base}/v1/chat/completions`;
+      const endpoints = parseCustomEndpoints(env.CUSTOM_AI_ENDPOINTS);
+      if (endpoints.length > 0) {
+        const selected = endpoints[0];
+        const mode = /\/chat\/completions$/i.test(selected.url) ? 'chat' : 'completion';
+        return {
+          provider,
+          model: selected.defaultModel || 'gpt-4o-mini',
+          apiKey: selected.key || env.CUSTOM_AI_API_KEY,
+          url: selected.url,
+          mode
+        };
+      }
+
+      if (!env.CUSTOM_AI_BASE_URL && !env.CUSTOM_AI_ENDPOINT) return null;
+      const rawEndpoint = env.CUSTOM_AI_ENDPOINT?.trim();
+      const rawBase = env.CUSTOM_AI_BASE_URL?.trim();
+      let url = '';
+      if (rawEndpoint) {
+        url = rawEndpoint;
+      } else if (rawBase) {
+        const base = rawBase.replace(/\/$/, '');
+        const hasFullEndpoint = /\/(chat\/completions|completions)$/i.test(base);
+        url = hasFullEndpoint ? base : `${base}/v1/chat/completions`;
+      }
+      const mode = /\/chat\/completions$/i.test(url) ? 'chat' : 'completion';
       return {
         provider,
         model: 'gpt-4o-mini',
         apiKey: env.CUSTOM_AI_API_KEY,
-        url
+        url,
+        mode
       };
     }
     case 'gemini':
@@ -112,10 +165,7 @@ function buildProviderConfig(env: Env, provider: AiProvider) {
   }
 }
 
-function pickProvider(env: Env, preferred?: AiProvider) {
-  if (preferred) {
-    return buildProviderConfig(env, preferred);
-  }
+function pickProvider(env: Env) {
   for (const p of AI_PROVIDERS) {
     const found = buildProviderConfig(env, p);
     if (found) return found;
@@ -126,23 +176,15 @@ function pickProvider(env: Env, preferred?: AiProvider) {
 function parseAiCommand(text: string) {
   const parts = text.trim().split(' ').filter(Boolean);
   const isCommand = parts[0]?.toLowerCase() === '/ai';
-  if (!isCommand) return { provider: undefined, model: undefined, question: text, list: false };
+  if (!isCommand) return { question: text, list: false };
 
   const secondRaw = parts[1]?.toLowerCase();
   if (secondRaw === 'list') {
-    return { provider: undefined, model: undefined, question: '', list: true };
-  }
-
-  const second = secondRaw;
-  if (second && (AI_PROVIDERS as string[]).includes(second)) {
-    const provider = second as AiProvider;
-    const model = parts[2];
-    const question = parts.slice(3).join(' ');
-    return { provider, model, question, list: false };
+    return { question: '', list: true };
   }
 
   const question = parts.slice(1).join(' ');
-  return { provider: undefined, model: undefined, question, list: false };
+  return { question, list: false };
 }
 
 export async function handleAiMessage(
@@ -153,26 +195,23 @@ export async function handleAiMessage(
 ) {
   const parsed = options.source === 'command'
     ? parseAiCommand(userText)
-    : { provider: undefined, model: undefined, question: userText, list: false };
+    : { question: userText, list: false };
 
   if (options.source === 'command' && parsed.list) {
-    const defaultProvider = env.TELEGRAM_AI_PROVIDER || 'auto';
-    const defaultModel = env.TELEGRAM_AI_MODEL || 'auto';
     await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
       chat_id: chatId,
-      text: `当前默认：${defaultProvider} / ${defaultModel}\n可用 provider：${AI_PROVIDERS.join(', ')}`
+      text: `当前 TGbot 使用与面板一致的 AI 配置（不再单独区分）。`
     });
     return;
   }
 
-  const preferredProvider = parsed.provider || env.TELEGRAM_AI_PROVIDER;
-  const picked = pickProvider(env, preferredProvider);
+  const picked = pickProvider(env);
   const question = parsed.question?.trim();
 
   if (!picked) {
     await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
       chat_id: chatId,
-      text: 'AI 未配置。请在环境变量中设置可用的 API Key，并可选设置 TELEGRAM_AI_PROVIDER/TELEGRAM_AI_MODEL。'
+      text: 'AI 未配置。请在环境变量中设置可用的 API Key 或自建公益站配置。'
     });
     return;
   }
@@ -180,15 +219,7 @@ export async function handleAiMessage(
   if (options.source === 'command' && !question) {
     await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
       chat_id: chatId,
-      text: '用法：/ai <问题> 或 /ai <provider> <model> <问题>\n示例：/ai openai gpt-4o-mini 哪些资产快到期？\n查看默认：/ai list'
-    });
-    return;
-  }
-
-  if (parsed.provider && parsed.provider !== picked.provider) {
-    await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
-      chat_id: chatId,
-      text: `未配置 ${parsed.provider} 的 Key，请换其他 provider。`
+      text: '用法：/ai <问题>\n示例：/ai 哪些资产快到期？'
     });
     return;
   }
@@ -197,7 +228,7 @@ export async function handleAiMessage(
     const resources = await getResources(env);
     const prompt = buildPrompt(resources, question || '');
     let reply = '';
-    const model = parsed.model || env.TELEGRAM_AI_MODEL || picked.model;
+    const model = picked.model;
 
     if (picked.provider === 'gemini') {
       const ai = new GoogleGenAI({ apiKey: picked.apiKey! });
@@ -212,7 +243,8 @@ export async function handleAiMessage(
         apiKey: picked.apiKey,
         model,
         prompt,
-        extraHeaders: picked.extraHeaders
+        extraHeaders: picked.extraHeaders,
+        mode: (picked as any).mode
       });
     }
 

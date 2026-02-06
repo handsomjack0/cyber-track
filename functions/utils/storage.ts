@@ -26,6 +26,8 @@ export interface Env {
   GITHUB_MODELS_URL?: string; // Full URL to GitHub Models chat completions endpoint
   CUSTOM_AI_BASE_URL?: string; // Base URL for self-hosted OpenAI-compatible API
   CUSTOM_AI_API_KEY?: string;
+  CUSTOM_AI_ENDPOINT?: string; // Full endpoint override (chat/completions or completions)
+  CUSTOM_AI_ENDPOINTS?: string; // Multi-endpoint list: id|url|key|defaultModel (one per line)
   TELEGRAM_AI_PROVIDER?: 'openai' | 'deepseek' | 'openrouter' | 'github' | 'custom' | 'gemini';
   TELEGRAM_AI_MODEL?: string;
   RESEND_API_KEY?: string;
