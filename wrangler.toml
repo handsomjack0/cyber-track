@@ -6,7 +6,7 @@ pages_build_output_dir = "dist"
 # Create a KV namespace in Cloudflare and bind it here.
 [[kv_namespaces]]
 binding = "CLOUDTRACK_KV"
-id = "YOUR_KV_NAMESPACE_ID"
+id = "68b2e21078af4e598a1406be0fc2598f"
 
 # D1 数据库绑定
 # 【重要】请将 database_id 替换为您自己在 Cloudflare D1 创建的数据库 ID
