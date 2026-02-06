@@ -4,6 +4,7 @@ import { TelegramMessage } from './types';
 import { isAuthorized } from './auth';
 import { handleStart, handleHelp, handleUnauthorized } from './handlers/general';
 import { handleStatus, handleList, handleExpiring, handleSearch } from './handlers/resources';
+import { handleAiMessage } from './handlers/ai';
 
 // Main Command Processor
 export async function processTelegramCommand(env: Env, message: TelegramMessage) {
@@ -28,6 +29,12 @@ export async function processTelegramCommand(env: Env, message: TelegramMessage)
     return;
   }
 
+  // 2.5 Non-command messages go to AI assistant
+  if (!fullText.startsWith('/')) {
+    await handleAiMessage(env, chatId, fullText);
+    return;
+  }
+
   // 3. Pre-fetch resources for commands that need them
   let resources: Resource[] = [];
   const resourceCommands = ['/status', '/list', '/expiring', '/search', '/vps', '/domains', '/accounts', '/cellphones'];
@@ -38,6 +45,9 @@ export async function processTelegramCommand(env: Env, message: TelegramMessage)
 
   // 4. Dispatch
   switch (command) {
+    case '/ai':
+      await handleAiMessage(env, chatId, fullText, { source: 'command' });
+      break;
     case '/status':
       await handleStatus(env, chatId, resources);
       break;

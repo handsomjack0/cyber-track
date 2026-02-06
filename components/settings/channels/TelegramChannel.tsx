@@ -15,6 +15,10 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
   const [setupLoading, setSetupLoading] = useState(false);
   const [setupStatus, setSetupStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [setupMsg, setSetupMsg] = useState('');
+  const [inspectLoading, setInspectLoading] = useState(false);
+  const [inspectStatus, setInspectStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [inspectMsg, setInspectMsg] = useState('');
+  const [inspectData, setInspectData] = useState<any>(null);
 
   const handleTest = async () => {
     setTesting(true);
@@ -49,9 +53,10 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
       const data = await response.json();
 
       if (data.ok) {
-        const commandsOk = data.commands?.ok !== false;
+        const results = [data.commands?.default, data.commands?.private, data.commands?.group].filter(Boolean);
+        const commandsOk = results.length > 0 && results.every((r: any) => r.ok !== false);
         setSetupStatus(commandsOk ? 'success' : 'error');
-        setSetupMsg(commandsOk ? 'Webhook 激活成功，并已注册指令菜单！' : `Webhook 成功，但指令菜单注册失败：${data.commands?.description || '请稍后重试'}`);
+        setSetupMsg(commandsOk ? 'Webhook 激活成功，并已注册指令菜单！' : 'Webhook 成功，但指令菜单注册失败，请稍后重试。');
       } else {
         setSetupStatus('error');
         if (data.description?.includes('TELEGRAM_BOT_TOKEN')) {
@@ -65,6 +70,32 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
       setSetupMsg('网络请求失败');
     } finally {
       setSetupLoading(false);
+    }
+  };
+
+  const handleInspectCommands = async () => {
+    setInspectLoading(true);
+    setInspectStatus('idle');
+    setInspectMsg('');
+    setInspectData(null);
+
+    try {
+      const response = await fetch('/api/telegram/commands');
+      const data = await response.json();
+
+      if (data.ok) {
+        setInspectStatus('success');
+        setInspectData(data.commands);
+        setInspectMsg('已获取当前指令菜单。');
+      } else {
+        setInspectStatus('error');
+        setInspectMsg(data.description || '获取失败，请检查后端日志');
+      }
+    } catch (e) {
+      setInspectStatus('error');
+      setInspectMsg('网络请求失败');
+    } finally {
+      setInspectLoading(false);
     }
   };
 
@@ -166,6 +197,39 @@ const TelegramChannel: React.FC<TelegramChannelProps> = ({ config, onChange }) =
                 <div className={`mt-3 text-xs flex items-center gap-1.5 ${setupStatus === 'success' ? 'text-blue-600 dark:text-blue-400' : 'text-rose-500 dark:text-rose-400'}`}>
                   {setupStatus === 'success' ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
                   {setupMsg}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">
+                一键检测 Telegram 侧已注册的指令菜单，便于排查 “/ 不显示” 的问题。
+              </p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleInspectCommands}
+                  disabled={inspectLoading}
+                  className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-2 shadow-sm transition-all
+                    ${inspectStatus === 'success' ? 'bg-blue-600 hover:bg-blue-700' :
+                      'bg-slate-900 dark:bg-sky-500 hover:bg-slate-800 dark:hover:bg-sky-600 disabled:opacity-70 disabled:cursor-not-allowed'}`}
+                >
+                  {inspectLoading ? <Loader2 size={16} className="animate-spin" /> : <Info size={16} />}
+                  {inspectLoading ? '检测中...' : '检测指令菜单'}
+                </button>
+              </div>
+
+              {inspectMsg && (
+                <div className={`mt-3 text-xs flex items-center gap-1.5 ${inspectStatus === 'success' ? 'text-blue-600 dark:text-blue-400' : 'text-rose-500 dark:text-rose-400'}`}>
+                  {inspectStatus === 'success' ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+                  {inspectMsg}
+                </div>
+              )}
+
+              {inspectData && (
+                <div className="mt-3 text-xs text-slate-600 dark:text-slate-400 space-y-1">
+                  <div>default: {inspectData.default?.result?.length ?? 0} 条指令</div>
+                  <div>private: {inspectData.private?.result?.length ?? 0} 条指令</div>
+                  <div>group: {inspectData.group?.result?.length ?? 0} 条指令</div>
                 </div>
               )}
             </div>

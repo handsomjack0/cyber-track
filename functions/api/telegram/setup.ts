@@ -1,6 +1,5 @@
-
 import { Env } from '../../utils/storage';
-import { setWebhook, setMyCommands, BotCommand } from '../../services/telegram/client';
+import { setWebhook, setMyCommands, BotCommand, getMyCommands } from '../../services/telegram/client';
 
 interface SetupRequest {
   origin: string; // The website's current base URL (e.g., https://myapp.pages.dev)
@@ -11,15 +10,15 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
 
   // 1. Security Check
   if (!env.TELEGRAM_BOT_TOKEN) {
-    return new Response(JSON.stringify({ 
-      ok: false, 
-      description: "Server Error: TELEGRAM_BOT_TOKEN is not configured." 
+    return new Response(JSON.stringify({
+      ok: false,
+      description: 'Server Error: TELEGRAM_BOT_TOKEN is not configured.'
     }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 
   try {
     const body = await request.json() as SetupRequest;
-    
+
     if (!body.origin) {
       return new Response(JSON.stringify({ ok: false, description: "Missing 'origin' in request body." }), { status: 400 });
     }
@@ -41,24 +40,40 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
 
     // 4. Register bot commands for Telegram "/" menu
     const commands: BotCommand[] = [
-      { command: 'start', description: '绑定账户并查看 Chat ID' },
-      { command: 'help', description: '查看所有可用指令' },
-      { command: 'status', description: '资产概览与到期提醒' },
-      { command: 'expiring', description: '查看 30 天内到期资源' },
-      { command: 'list', description: '列出全部资源' },
-      { command: 'vps', description: '列出 VPS 资源' },
-      { command: 'domains', description: '列出域名资源' },
-      { command: 'accounts', description: '列出账号资源' },
-      { command: 'cellphones', description: '列出手机号码资源' },
-      { command: 'search', description: '搜索资源：/search 关键词' }
+      { command: 'start', description: 'Bind account and show Chat ID' },
+      { command: 'help', description: 'Show all commands' },
+      { command: 'status', description: 'Asset overview and expirations' },
+      { command: 'expiring', description: 'Assets expiring in 30 days' },
+      { command: 'list', description: 'List all assets' },
+      { command: 'ai', description: 'AI Q&A' },
+      { command: 'vps', description: 'List VPS assets' },
+      { command: 'domains', description: 'List domain assets' },
+      { command: 'accounts', description: 'List account assets' },
+      { command: 'cellphones', description: 'List phone number assets' },
+      { command: 'search', description: 'Search assets: /search keyword' }
     ];
 
-    const commandsResult = await setMyCommands(env.TELEGRAM_BOT_TOKEN, commands);
+    // Register commands in multiple scopes to avoid client-side menu inconsistencies
+    const commandsDefault = await setMyCommands(env.TELEGRAM_BOT_TOKEN, commands, { scope: { type: 'default' } });
+    const commandsPrivate = await setMyCommands(env.TELEGRAM_BOT_TOKEN, commands, { scope: { type: 'all_private_chats' } });
+    const commandsGroup = await setMyCommands(env.TELEGRAM_BOT_TOKEN, commands, { scope: { type: 'all_group_chats' } });
+
+    // Fetch back for verification
+    const currentDefault = await getMyCommands(env.TELEGRAM_BOT_TOKEN, { scope: { type: 'default' } });
+    const currentPrivate = await getMyCommands(env.TELEGRAM_BOT_TOKEN, { scope: { type: 'all_private_chats' } });
 
     const responseBody = {
       ok: true,
       webhook: result,
-      commands: commandsResult
+      commands: {
+        default: commandsDefault,
+        private: commandsPrivate,
+        group: commandsGroup,
+        current: {
+          default: currentDefault,
+          private: currentPrivate
+        }
+      }
     };
 
     return new Response(JSON.stringify(responseBody), {
@@ -67,9 +82,9 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     });
 
   } catch (error) {
-    return new Response(JSON.stringify({ ok: false, description: String(error) }), { 
-      status: 500, 
-      headers: { 'Content-Type': 'application/json' } 
+    return new Response(JSON.stringify({ ok: false, description: String(error) }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
     });
   }
 };

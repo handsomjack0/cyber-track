@@ -1,6 +1,7 @@
-ï»¿import React from 'react';
-import { Mail } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mail, Send, CheckCircle, AlertCircle, Loader2, Info } from 'lucide-react';
 import { EmailConfig } from '../../../types';
+import { sendEmailTestMessage } from '../../../services/notifications/emailService';
 
 interface EmailChannelProps {
   config: EmailConfig;
@@ -8,6 +9,27 @@ interface EmailChannelProps {
 }
 
 const EmailChannel: React.FC<EmailChannelProps> = ({ config, onChange }) => {
+  const [testing, setTesting] = useState(false);
+  const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleTest = async () => {
+    setTesting(true);
+    setTestStatus('idle');
+    try {
+      await sendEmailTestMessage(config);
+      setTestStatus('success');
+      setTimeout(() => setTestStatus('idle'), 3000);
+    } catch (e: any) {
+      console.error(e);
+      setTestStatus('error');
+      if (e.message?.includes('RESEND_API_KEY') || e.message?.includes('RESEND_FROM')) {
+        alert('²âÊÔÊ§°Ü£ººó¶ËÎ´ÅäÖÃ RESEND_API_KEY / RESEND_FROM¡£ÇëÔÚ Cloudflare ÉèÖÃÖĞÌí¼Ó¡£');
+      }
+    } finally {
+      setTesting(false);
+    }
+  };
+
   return (
     <div className={`border rounded-xl p-6 transition-all ${config.enabled ? 'bg-white/90 dark:bg-slate-900/70 border-sky-400/30 dark:border-slate-800 shadow-sm' : 'bg-slate-50/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/60 opacity-80'}`}>
       <div className="flex items-center justify-between mb-6">
@@ -16,8 +38,8 @@ const EmailChannel: React.FC<EmailChannelProps> = ({ config, onChange }) => {
             <Mail size={20} />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white">é‚®ä»¶é€šçŸ¥</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">å‘é€æé†’è‡³æŒ‡å®šé‚®ç®±ï¼ˆéœ€è¦åç«¯æ”¯æŒï¼‰</p>
+            <h3 className="font-semibold text-slate-900 dark:text-white">ÓÊ¼şÍ¨Öª</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">·¢ËÍÌáĞÑÖÁÖ¸¶¨ÓÊÏä£¨Resend API£©</p>
           </div>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
@@ -34,18 +56,34 @@ const EmailChannel: React.FC<EmailChannelProps> = ({ config, onChange }) => {
       {config.enabled && (
         <div className="space-y-4 animate-fade-in">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">æ¥æ”¶é‚®ç®±åœ°å€</label>
-            <input
-              type="email"
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-sky-400/40 focus:border-transparent bg-white dark:bg-slate-900/70"
-              placeholder="admin@example.com"
-              value={config.email}
-              onChange={(e) => onChange({ ...config, email: e.target.value })}
-            />
-          </div>
-          <div className="flex items-start gap-2 text-xs text-sky-300 bg-sky-400/10 dark:bg-amber-900/20 p-3 rounded-lg">
-            <span>âš ï¸</span>
-            <p>æç¤ºï¼šå½“å‰ä¸ºå‰ç«¯æ¼”ç¤ºï¼Œé‚®ä»¶å‘é€éœ€è¦åç«¯æœåŠ¡æ”¯æŒã€‚</p>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">½ÓÊÕÓÊÏäµØÖ·</label>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-sky-400/40 focus:border-transparent bg-white dark:bg-slate-900/70"
+                placeholder="admin@example.com"
+                value={config.email}
+                onChange={(e) => onChange({ ...config, email: e.target.value })}
+              />
+              <button
+                onClick={handleTest}
+                disabled={!config.email || testing}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors
+                  ${testStatus === 'success' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                    testStatus === 'error' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' :
+                    'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+              >
+                {testing ? <Loader2 size={16} className="animate-spin" /> :
+                  testStatus === 'success' ? <CheckCircle size={16} /> :
+                  testStatus === 'error' ? <AlertCircle size={16} /> :
+                  <Send size={16} />}
+                {testStatus === 'success' ? '·¢ËÍ³É¹¦' : testStatus === 'error' ? '·¢ËÍÊ§°Ü' : '·¢ËÍ²âÊÔ'}
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500 dark:text-slate-400">
+              <Info size={12} />
+              <span>ÓÊ¼şÓÉ Resend ·¢ËÍ£¬ÇëÈ·±£ºó¶ËÒÑÅäÖÃ RESEND_API_KEY Óë RESEND_FROM¡£</span>
+            </div>
           </div>
         </div>
       )}
@@ -54,4 +92,3 @@ const EmailChannel: React.FC<EmailChannelProps> = ({ config, onChange }) => {
 };
 
 export default EmailChannel;
-

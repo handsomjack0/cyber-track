@@ -1,5 +1,6 @@
-ï»¿import { Env, Resource, AppSettings } from '../../utils/storage';
+import { Env, Resource, AppSettings } from '../../utils/storage';
 import { sendMessage } from '../telegram/client';
+import { sendEmailResend } from '../email/resend';
 
 interface NotificationResult {
   success: boolean;
@@ -11,13 +12,13 @@ type ChangeAction = 'created' | 'updated' | 'deleted';
 
 function formatChangeList(changes: string[]) {
   if (changes.length === 0) return '';
-  return `\n\nå˜æ›´é¡¹:\n${changes.map(item => `â€¢ ${item}`).join('\n')}`;
+  return `\n\n±ä¸üÏî:\n${changes.map(item => `? ${item}`).join('\n')}`;
 }
 
 export async function sendResourceNotification(
-  env: Env, 
-  resource: Resource, 
-  daysRemaining: number, 
+  env: Env,
+  resource: Resource,
+  daysRemaining: number,
   settings: AppSettings
 ): Promise<NotificationResult> {
   const channelsSent: string[] = [];
@@ -34,18 +35,19 @@ export async function sendResourceNotification(
 
   // Determine enabled channels
   const useTelegram = isGlobal ? settings.telegram.enabled : resSettings?.channels?.telegram;
+  const useEmail = isGlobal ? settings.email.enabled : resSettings?.channels?.email;
   const useWebhook = isGlobal ? settings.webhook.enabled : resSettings?.channels?.webhook;
 
   // Prepare Message Content
-  const title = `âš ï¸ <b>ç»­è´¹æé†’: ${resource.name}</b>`;
-  const status = daysRemaining < 0 ? `å·²è¿‡æœŸ ${Math.abs(daysRemaining)} å¤©` : `å‰©ä½™ ${daysRemaining} å¤©`;
+  const title = `?? <b>Ğø·ÑÌáĞÑ: ${resource.name}</b>`;
+  const status = daysRemaining < 0 ? `ÒÑ¹ıÆÚ ${Math.abs(daysRemaining)} Ìì` : `Ê£Óà ${daysRemaining} Ìì`;
   const message = `${title}\n\n` +
-                  `ğŸ“Œ <b>èµ„äº§:</b> ${resource.name}\n` +
-                  `ğŸ·ï¸ <b>æœåŠ¡å•†:</b> ${resource.provider}\n` +
-                  `â±ï¸ <b>çŠ¶æ€:</b> ${status}\n` +
-                  `ğŸ“† <b>åˆ°æœŸæ—¥:</b> ${resource.expiryDate}\n` +
-                  `ğŸ’° <b>è´¹ç”¨:</b> ${resource.currency}${resource.cost}\n\n` +
-                  `è¯·åŠæ—¶å¤„ç†ç»­è´¹ä»¥é¿å…æœåŠ¡ä¸­æ–­ã€‚`;
+                  `?? <b>×Ê²ú:</b> ${resource.name}\n` +
+                  `??? <b>·şÎñÉÌ:</b> ${resource.provider}\n` +
+                  `?? <b>×´Ì¬:</b> ${status}\n` +
+                  `?? <b>µ½ÆÚÈÕ:</b> ${resource.expiryDate}\n` +
+                  `?? <b>·ÑÓÃ:</b> ${resource.currency}${resource.cost}\n\n` +
+                  `Çë¼°Ê±´¦ÀíĞø·ÑÒÔ±ÜÃâ·şÎñÖĞ¶Ï¡£`;
 
   // 2. Send via Telegram
   if (useTelegram && settings.telegram.chatId && env.TELEGRAM_BOT_TOKEN) {
@@ -61,7 +63,37 @@ export async function sendResourceNotification(
     }
   }
 
-  // 3. Send via Webhook
+  // 3. Send via Email (Resend)
+  if (useEmail && settings.email.email && env.RESEND_API_KEY && env.RESEND_FROM) {
+    try {
+      const subject = `cyberTrack Ğø·ÑÌáĞÑ£º${resource.name}`;
+      const html = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h3>Ğø·ÑÌáĞÑ£º${resource.name}</h3>
+          <ul>
+            <li><strong>·şÎñÉÌ£º</strong>${resource.provider}</li>
+            <li><strong>×´Ì¬£º</strong>${status}</li>
+            <li><strong>µ½ÆÚÈÕ£º</strong>${resource.expiryDate}</li>
+            <li><strong>·ÑÓÃ£º</strong>${resource.currency}${resource.cost}</li>
+          </ul>
+          <p>Çë¼°Ê±´¦ÀíĞø·ÑÒÔ±ÜÃâ·şÎñÖĞ¶Ï¡£</p>
+        </div>
+      `;
+      const text = `Ğø·ÑÌáĞÑ£º${resource.name}\n·şÎñÉÌ£º${resource.provider}\n×´Ì¬£º${status}\nµ½ÆÚÈÕ£º${resource.expiryDate}\n·ÑÓÃ£º${resource.currency}${resource.cost}\nÇë¼°Ê±´¦ÀíĞø·ÑÒÔ±ÜÃâ·şÎñÖĞ¶Ï¡£`;
+
+      await sendEmailResend(env.RESEND_API_KEY, env.RESEND_FROM, {
+        to: settings.email.email,
+        subject,
+        html,
+        text
+      });
+      channelsSent.push('Email');
+    } catch (e) {
+      console.error('Email send failed', e);
+    }
+  }
+
+  // 4. Send via Webhook
   if (useWebhook && settings.webhook.url) {
     try {
       await fetch(settings.webhook.url, {
@@ -102,18 +134,19 @@ export async function sendResourceChangeNotification(
   }
 
   const useTelegram = isGlobal ? settings.telegram.enabled : resSettings?.channels?.telegram;
+  const useEmail = isGlobal ? settings.email.enabled : resSettings?.channels?.email;
   const useWebhook = isGlobal ? settings.webhook.enabled : resSettings?.channels?.webhook;
 
   const actionLabel =
-    action === 'created' ? 'æ–°å¢' :
-    action === 'updated' ? 'æ›´æ–°' :
-    'åˆ é™¤';
+    action === 'created' ? 'ĞÂÔö' :
+    action === 'updated' ? '¸üĞÂ' :
+    'É¾³ı';
 
-  const message = `ğŸ§© <b>èµ„æº${actionLabel}</b>\n\n` +
-                  `ğŸ“Œ <b>èµ„äº§:</b> ${resource.name}\n` +
-                  `ğŸ·ï¸ <b>æœåŠ¡å•†:</b> ${resource.provider}\n` +
-                  `ğŸ”– <b>ç±»å‹:</b> ${resource.type}\n` +
-                  `ğŸ“† <b>åˆ°æœŸæ—¥:</b> ${resource.expiryDate || '-'}` +
+  const message = `?? <b>×ÊÔ´${actionLabel}</b>\n\n` +
+                  `?? <b>×Ê²ú:</b> ${resource.name}\n` +
+                  `??? <b>·şÎñÉÌ:</b> ${resource.provider}\n` +
+                  `?? <b>ÀàĞÍ:</b> ${resource.type}\n` +
+                  `?? <b>µ½ÆÚÈÕ:</b> ${resource.expiryDate || '-'}` +
                   formatChangeList(changes);
 
   if (useTelegram && settings.telegram.chatId && env.TELEGRAM_BOT_TOKEN) {
@@ -126,6 +159,34 @@ export async function sendResourceChangeNotification(
       channelsSent.push('Telegram');
     } catch (e) {
       console.error('Telegram send failed', e);
+    }
+  }
+
+  if (useEmail && settings.email.email && env.RESEND_API_KEY && env.RESEND_FROM) {
+    try {
+      const subject = `cyberTrack ×ÊÔ´${actionLabel}£º${resource.name}`;
+      const html = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h3>×ÊÔ´${actionLabel}£º${resource.name}</h3>
+          <ul>
+            <li><strong>·şÎñÉÌ£º</strong>${resource.provider}</li>
+            <li><strong>ÀàĞÍ£º</strong>${resource.type}</li>
+            <li><strong>µ½ÆÚÈÕ£º</strong>${resource.expiryDate || '-'}</li>
+          </ul>
+          ${changes.length ? `<p><strong>±ä¸üÏî£º</strong><br/>${changes.map(c => `? ${c}`).join('<br/>')}</p>` : ''}
+        </div>
+      `;
+      const text = `×ÊÔ´${actionLabel}£º${resource.name}\n·şÎñÉÌ£º${resource.provider}\nÀàĞÍ£º${resource.type}\nµ½ÆÚÈÕ£º${resource.expiryDate || '-'}${changes.length ? `\n±ä¸üÏî£º\n${changes.map(c => `? ${c}`).join('\n')}` : ''}`;
+
+      await sendEmailResend(env.RESEND_API_KEY, env.RESEND_FROM, {
+        to: settings.email.email,
+        subject,
+        html,
+        text
+      });
+      channelsSent.push('Email');
+    } catch (e) {
+      console.error('Email send failed', e);
     }
   }
 

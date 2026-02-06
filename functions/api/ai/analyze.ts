@@ -20,12 +20,36 @@ You are a System Administrator and IT Asset Advisor. Analyze the following JSON 
 Data:
 ${JSON.stringify(resources)}
 
-Please provide a concise summary report in Markdown format covering:
-1. **Urgent Alerts**: Any items (including phone numbers) expiring in the next 30 days.
-2. **Cost Analysis**: Total monthly/yearly projection, broken down by resource type if possible.
-3. **Optimization Tips**: Suggestions on consolidation, renewal strategies, or cancelling unused low-value assets.
+Output a clean, readable Markdown report using this exact structure (no code fences):
 
-Keep the tone professional and helpful.
+## IT Asset Management Summary
+Short 1-2 sentence overview.
+
+### 1. Urgent Alerts
+- Bullet list of items expiring in the next 30 days.
+- If none, write: "No urgent alerts in the next 30 days."
+
+### 2. Cost Analysis
+- **Total Monthly Cost:** $X (or "N/A" if unknown)
+- **Total Yearly Cost:** $Y (or "N/A" if unknown)
+- **Breakdown by Type** (use a Markdown table):
+| Type | Items | Monthly | Yearly | Notes |
+| --- | --- | --- | --- | --- |
+| VPS |  |  |  |  |
+| Domain |  |  |  |  |
+| Phone |  |  |  |  |
+
+### 3. Optimization Tips
+- 3-6 concise bullets focused on consolidation, renewals, and low-value assets.
+
+### 4. Follow-ups (if needed)
+- Any missing info or confirmations required.
+
+Formatting rules:
+- Use consistent bold labels.
+- Avoid nested lists when possible.
+- Do not include raw JSON in the output.
+- Keep language professional and helpful.
 `;
 
 async function callOpenAICompatible(params: {
@@ -173,8 +197,9 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     return errorWithCode('Unsupported provider.', 'UNSUPPORTED_PROVIDER', 400);
 
   } catch (error) {
-    console.error("AI Backend Error:", error);
-    return errorResponse('Failed to generate analysis.', 500);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("AI Backend Error:", message);
+    return errorWithCode(`AI Backend Error: ${message}`, 'AI_BACKEND_ERROR', 500);
   }
 };
 const errorWithCode = (message: string, code: string, status = 400) =>
