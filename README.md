@@ -5,7 +5,7 @@ cyberTrack 是一个面向个人/单团队的“工程蓝图风”资产管理�
 **核心功能**
 - 资产管理：VPS/域名/账号/手机号等资源的增删改查与分类浏览'
 - 到期提醒：每日定时扫描（Cron）+ 即时变更通知（新增/更新/删除）
-- Telegram Bot：指令交互（/status /expiring /list /search 等）与通知推送
+- Telegram Bot：指令交互（/status /expiring /list /search 等）与通知推送d
 - 数据管理：导出备份、覆盖/合并导入、预检查与错误明细下载
 - 汇率：服务端缓存 + 手动覆盖（避免第三方 API 波动）
 - AI 资产顾问：多平台模型选择，服务端代理，Key 可选
