@@ -14,7 +14,7 @@ cyberTrack 是一个面向个人/单团队的“工程蓝图风”资产管理�
 ---
 
 ## 目录结构（关键）
-- `components/` 前端 UI 组件
+- `components/` 前端 UI 组件功能
 - `services/` 前端服务层（API 调用、缓存逻辑）
 - `functions/` Cloudflare Pages Functions（后端逻辑）
 - `functions/api/v1/` 资源/设置/汇率 API
