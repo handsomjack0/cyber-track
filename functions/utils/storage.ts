@@ -28,8 +28,19 @@ export interface Env {
   CUSTOM_AI_API_KEY?: string;
   CUSTOM_AI_ENDPOINT?: string; // Full endpoint override (chat/completions or completions)
   CUSTOM_AI_ENDPOINTS?: string; // Multi-endpoint list: id|url|key|defaultModel (one per line)
-  TELEGRAM_AI_PROVIDER?: 'openai' | 'deepseek' | 'openrouter' | 'github' | 'custom' | 'gemini';
-  TELEGRAM_AI_MODEL?: string;
+  AI_DEFAULT_PROVIDER?: 'openai' | 'deepseek' | 'openrouter' | 'github' | 'custom' | 'gemini';
+  AI_DEFAULT_MODEL?: string;
+  AI_OPENAI_MODEL?: string;
+  AI_DEEPSEEK_MODEL?: string;
+  AI_OPENROUTER_MODEL?: string;
+  AI_GITHUB_MODEL?: string;
+  AI_CUSTOM_MODEL?: string;
+  AI_GEMINI_MODEL?: string;
+  AI_TIMEOUT_MS?: string;
+  AI_RETRIES?: string;
+  AI_RETRY_DELAY_MS?: string;
+  AI_MAX_TOKENS?: string;
+  AI_TEMPERATURE?: string;
   RESEND_API_KEY?: string;
   RESEND_FROM?: string;
   ACCESS_MODE?: 'access-code' | 'cloudflare' | 'hybrid';

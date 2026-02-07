@@ -1,5 +1,4 @@
-
-import { Resource } from "../types/index";
+﻿import { Resource } from "../types/index";
 import { ApiError, requestJson } from "../utils/apiClient";
 
 export type AiProvider = 'openai' | 'deepseek' | 'openrouter' | 'github' | 'custom' | 'gemini';
@@ -25,7 +24,7 @@ export const analyzePortfolio = async (
     );
 
     if (response.data?.analysis) return response.data.analysis;
-    return 'AI ??????????????API ?????????';
+    return 'AI 暂未返回内容，请检查模型名称或接口配置。';
   } catch (error) {
     if (error instanceof ApiError) {
       const code = (error.data as any)?.error_code as string | undefined;
@@ -43,6 +42,8 @@ export const analyzePortfolio = async (
             return '自建公益站地址未配置。请设置 CUSTOM_AI_BASE_URL，或切换到其他平台。';
           case 'MISSING_GEMINI_KEY':
             return 'Gemini 未配置 Key。请设置 API_KEY，或切换到其他平台。';
+          case 'CUSTOM_ENDPOINT_NOT_FOUND':
+            return '自建公益站标识不存在，请检查 customId 或 CUSTOM_AI_ENDPOINTS。';
           default:
             return error.message;
         }

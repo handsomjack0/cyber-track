@@ -1,34 +1,10 @@
 ﻿import { GoogleGenAI } from '@google/genai';
 import { Env, getResources, Resource } from '../../../utils/storage';
 import { sendMessage } from '../client';
+import { AiProvider, getAiRuntimeSettings, pickFirstAvailableProvider } from '../../../services/ai/config';
+import { callOpenAICompatible, withTimeout } from '../../../services/ai/client';
 
-type AiProvider = 'openai' | 'deepseek' | 'openrouter' | 'github' | 'custom' | 'gemini';
 const AI_PROVIDERS: AiProvider[] = ['openai', 'deepseek', 'openrouter', 'github', 'custom', 'gemini'];
-
-interface ChatCompletionResponse {
-  choices?: Array<{ message?: { content?: string }; text?: string }>;
-}
-
-type CustomEndpoint = {
-  id: string;
-  url: string;
-  key?: string;
-  defaultModel?: string;
-};
-
-const parseCustomEndpoints = (raw?: string): CustomEndpoint[] => {
-  if (!raw) return [];
-  return raw
-    .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(Boolean)
-    .map(line => {
-      const [id, url, key, defaultModel] = line.split('|').map(s => s?.trim());
-      if (!id || !url) return null;
-      return { id, url, key, defaultModel };
-    })
-    .filter((v): v is CustomEndpoint => Boolean(v));
-};
 
 const buildPrompt = (resources: Resource[], userText: string) => `
 You are the cyberTrack Telegram assistant. You help the user understand and manage IT assets.
@@ -47,140 +23,21 @@ Rules:
 - Do not include JSON in the response.
 `;
 
-async function callOpenAICompatible(params: {
-  url: string;
-  apiKey?: string;
-  model: string;
-  prompt: string;
-  extraHeaders?: Record<string, string>;
-  mode?: 'chat' | 'completion';
-}) {
-  const { url, apiKey, model, prompt, extraHeaders } = params;
-  const mode = params.mode ?? 'chat';
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-      ...(extraHeaders || {})
-    },
-    body: JSON.stringify(
-      mode === 'chat'
-        ? {
-            model,
-            messages: [
-              { role: 'system', content: 'You are a helpful IT asset advisor.' },
-              { role: 'user', content: prompt }
-            ],
-            temperature: 0.4,
-            max_tokens: 500
-          }
-        : {
-            model,
-            prompt,
-            temperature: 0.4,
-            max_tokens: 500
-          }
-    )
-  });
+const hasCustomConfig = (env: Env) =>
+  Boolean(env.CUSTOM_AI_ENDPOINTS?.trim()) ||
+  Boolean(env.CUSTOM_AI_ENDPOINT?.trim()) ||
+  Boolean(env.CUSTOM_AI_BASE_URL?.trim());
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`AI request failed (${response.status}): ${text || response.statusText}`);
+const getPreferredOrder = (env: Env) => {
+  const defaultProvider = env.AI_DEFAULT_PROVIDER as AiProvider | undefined;
+  if (defaultProvider) {
+    return [defaultProvider, ...AI_PROVIDERS.filter(p => p !== defaultProvider)] as AiProvider[];
   }
-
-  const data = (await response.json()) as ChatCompletionResponse;
-  const text = mode === 'chat' ? data?.choices?.[0]?.message?.content : data?.choices?.[0]?.text;
-  return text || '';
-}
-
-function buildProviderConfig(env: Env, provider: AiProvider) {
-  switch (provider) {
-    case 'openai':
-      if (!env.OPENAI_API_KEY) return null;
-      return { provider, model: 'gpt-4o-mini', apiKey: env.OPENAI_API_KEY, url: 'https://api.openai.com/v1/chat/completions' };
-    case 'deepseek':
-      if (!env.DEEPSEEK_API_KEY) return null;
-      return { provider, model: 'deepseek-chat', apiKey: env.DEEPSEEK_API_KEY, url: 'https://api.deepseek.com/chat/completions' };
-    case 'openrouter':
-      if (!env.OPENROUTER_API_KEY) return null;
-      return {
-        provider,
-        model: 'openai/gpt-4o-mini',
-        apiKey: env.OPENROUTER_API_KEY,
-        url: 'https://openrouter.ai/api/v1/chat/completions',
-        extraHeaders: {
-          ...(env.OPENROUTER_SITE_URL ? { 'HTTP-Referer': env.OPENROUTER_SITE_URL } : {}),
-          ...(env.OPENROUTER_APP_TITLE ? { 'X-Title': env.OPENROUTER_APP_TITLE } : {})
-        }
-      };
-    case 'github':
-      if (!env.GITHUB_TOKEN || !env.GITHUB_MODELS_URL) return null;
-      return {
-        provider,
-        model: 'gpt-4o-mini',
-        apiKey: env.GITHUB_TOKEN,
-        url: env.GITHUB_MODELS_URL,
-        extraHeaders: { Accept: 'application/vnd.github+json' }
-      };
-    case 'custom': {
-      const endpoints = parseCustomEndpoints(env.CUSTOM_AI_ENDPOINTS);
-      if (endpoints.length > 0) {
-        const selected = endpoints[0];
-        const mode = /\/chat\/completions$/i.test(selected.url) ? 'chat' : 'completion';
-        return {
-          provider,
-          model: selected.defaultModel || 'gpt-4o-mini',
-          apiKey: selected.key || env.CUSTOM_AI_API_KEY,
-          url: selected.url,
-          mode
-        };
-      }
-
-      if (!env.CUSTOM_AI_BASE_URL && !env.CUSTOM_AI_ENDPOINT) return null;
-      const rawEndpoint = env.CUSTOM_AI_ENDPOINT?.trim();
-      const rawBase = env.CUSTOM_AI_BASE_URL?.trim();
-      let url = '';
-      if (rawEndpoint) {
-        url = rawEndpoint;
-      } else if (rawBase) {
-        const base = rawBase.replace(/\/$/, '');
-        const hasFullEndpoint = /\/(chat\/completions|completions)$/i.test(base);
-        url = hasFullEndpoint ? base : `${base}/v1/chat/completions`;
-      }
-      const mode = /\/chat\/completions$/i.test(url) ? 'chat' : 'completion';
-      return {
-        provider,
-        model: 'gpt-4o-mini',
-        apiKey: env.CUSTOM_AI_API_KEY,
-        url,
-        mode
-      };
-    }
-    case 'gemini':
-      if (!env.API_KEY) return null;
-      return { provider, model: 'gemini-1.5-flash', apiKey: env.API_KEY };
-    default:
-      return null;
+  if (hasCustomConfig(env)) {
+    return ['custom', ...AI_PROVIDERS.filter(p => p !== 'custom')] as AiProvider[];
   }
-}
-
-function pickProvider(env: Env) {
-  const hasCustom =
-    Boolean(env.CUSTOM_AI_ENDPOINTS?.trim()) ||
-    Boolean(env.CUSTOM_AI_ENDPOINT?.trim()) ||
-    Boolean(env.CUSTOM_AI_BASE_URL?.trim());
-
-  const preferredOrder = hasCustom
-    ? (['custom', ...AI_PROVIDERS.filter(p => p !== 'custom')] as AiProvider[])
-    : AI_PROVIDERS;
-
-  for (const p of preferredOrder) {
-    const found = buildProviderConfig(env, p);
-    if (found) return found;
-  }
-  return null;
-}
+  return AI_PROVIDERS;
+};
 
 function parseAiCommand(text: string) {
   const parts = text.trim().split(' ').filter(Boolean);
@@ -209,12 +66,12 @@ export async function handleAiMessage(
   if (options.source === 'command' && parsed.list) {
     await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
       chat_id: chatId,
-      text: `当前 TGbot 使用与面板一致的 AI 配置（不再单独区分）。`
+      text: '当前 TGbot 使用与面板一致的 AI 配置（不再单独区分）。'
     });
     return;
   }
 
-  const picked = pickProvider(env);
+  const picked = pickFirstAvailableProvider(env, getPreferredOrder(env));
   const question = parsed.question?.trim();
 
   if (!picked) {
@@ -236,24 +93,32 @@ export async function handleAiMessage(
   try {
     const resources = await getResources(env);
     const prompt = buildPrompt(resources, question || '');
+    const runtime = getAiRuntimeSettings(env, { maxTokens: 500 });
     let reply = '';
-    const model = picked.model;
 
-    if (picked.provider === 'gemini') {
+    if (picked.kind === 'gemini') {
       const ai = new GoogleGenAI({ apiKey: picked.apiKey! });
-      const response = await ai.models.generateContent({
-        model,
-        contents: prompt
-      });
+      const response = await withTimeout(
+        ai.models.generateContent({
+          model: picked.model,
+          contents: prompt
+        }),
+        runtime.timeoutMs
+      ) as Awaited<ReturnType<typeof ai.models.generateContent>>;
       reply = response.text || '';
     } else {
       reply = await callOpenAICompatible({
         url: picked.url!,
         apiKey: picked.apiKey,
-        model,
+        model: picked.model,
         prompt,
         extraHeaders: picked.extraHeaders,
-        mode: (picked as any).mode
+        mode: picked.mode,
+        timeoutMs: runtime.timeoutMs,
+        retries: runtime.retries,
+        retryDelayMs: runtime.retryDelayMs,
+        temperature: runtime.temperature,
+        maxTokens: runtime.maxTokens
       });
     }
 

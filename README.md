@@ -1,4 +1,5 @@
 ﻿# cyberTrack
+版本：1.1
 
 cyberTrack 是一个面向个人/单团队的“工程蓝图风”资产管理控制台，支持资产录入、到期提醒、数据备份/恢复、AI 资产分析，以及 Telegram 机器人通知。
 
@@ -68,7 +69,19 @@ id = "YOUR_KV_NAMESPACE_ID"
 - `GITHUB_MODELS_URL`（GitHub Models Chat Completions endpoint）
 - `CUSTOM_AI_BASE_URL`（自建 OpenAI 兼容服务地址）
 - `CUSTOM_AI_API_KEY`（可选）
+- `CUSTOM_AI_ENDPOINT`（可选，完整接口路径）
+- `CUSTOM_AI_ENDPOINTS`（可选，多端点列表）
 - `API_KEY`（Gemini，保留兼容）
+
+**AI 配置增强（可选）**
+- `AI_DEFAULT_PROVIDER`：默认提供商（openai/deepseek/openrouter/github/custom/gemini）
+- `AI_DEFAULT_MODEL`：全局默认模型
+- `AI_OPENAI_MODEL` / `AI_DEEPSEEK_MODEL` / `AI_OPENROUTER_MODEL` / `AI_GITHUB_MODEL` / `AI_CUSTOM_MODEL` / `AI_GEMINI_MODEL`
+- `AI_TIMEOUT_MS`：请求超时（毫秒）
+- `AI_RETRIES`：重试次数（默认 1）
+- `AI_RETRY_DELAY_MS`：重试间隔（毫秒）
+- `AI_MAX_TOKENS`：最大输出 token
+- `AI_TEMPERATURE`：采样温度
 
 ### 4) 部署
 - `npm run build`
@@ -134,6 +147,8 @@ crons = ["0 1 * * *"]
 - 平台
 - 模型名称（支持手动输入）
 
+默认平台与模型由环境变量控制，若未设置则使用内置默认值。
+
 ### GitHub Models 示例
 GitHub Models 的 `GITHUB_MODELS_URL` 需要填写完整 endpoint，例如：
 ```
@@ -190,3 +205,4 @@ A: 实时 API 获取失败时的回退汇率，可手动覆盖。
 
 ## License
 MIT
+
