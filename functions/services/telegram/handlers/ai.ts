@@ -166,7 +166,16 @@ function buildProviderConfig(env: Env, provider: AiProvider) {
 }
 
 function pickProvider(env: Env) {
-  for (const p of AI_PROVIDERS) {
+  const hasCustom =
+    Boolean(env.CUSTOM_AI_ENDPOINTS?.trim()) ||
+    Boolean(env.CUSTOM_AI_ENDPOINT?.trim()) ||
+    Boolean(env.CUSTOM_AI_BASE_URL?.trim());
+
+  const preferredOrder = hasCustom
+    ? (['custom', ...AI_PROVIDERS.filter(p => p !== 'custom')] as AiProvider[])
+    : AI_PROVIDERS;
+
+  for (const p of preferredOrder) {
     const found = buildProviderConfig(env, p);
     if (found) return found;
   }
@@ -248,7 +257,14 @@ export async function handleAiMessage(
       });
     }
 
-    const safeReply = reply?.trim() || '抱歉，我暂时没有找到合适的答复。你可以试试 /help 或 /status。';
+    const safeReply = reply?.trim();
+    if (!safeReply) {
+      await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
+        chat_id: chatId,
+        text: 'AI 返回为空，请检查模型名或接口路径是否正确（chat/completions vs completions）。'
+      });
+      return;
+    }
     await sendMessage(env.TELEGRAM_BOT_TOKEN!, { chat_id: chatId, text: safeReply });
   } catch (error) {
     console.error('Telegram AI Error:', error);
