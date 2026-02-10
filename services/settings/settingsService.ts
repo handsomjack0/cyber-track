@@ -72,6 +72,10 @@ const readLocalSettings = (): AppSettings | null => {
   }
 };
 
+export const cacheSettingsLocally = (settings: AppSettings): void => {
+  localStorage.setItem('cloudtrack_settings', JSON.stringify(normalizeSettings(settings)));
+};
+
 export const getSettings = async (): Promise<AppSettings> => {
   // 1. Try to get Local Storage first (for backup)
   const localData = readLocalSettings();
@@ -112,7 +116,7 @@ export const getSettings = async (): Promise<AppSettings> => {
 
 export const saveSettings = async (settings: AppSettings): Promise<void> => {
   // 1. Optimistic update for local fallback
-  localStorage.setItem('cloudtrack_settings', JSON.stringify(settings));
+  cacheSettingsLocally(settings);
 
   // 2. Send to Backend
   try {

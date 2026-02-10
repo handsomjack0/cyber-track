@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Bell, Clock, Save, Loader2, AlertTriangle, AlertCircle } from 'lucide-react';
 import { AppSettings } from '../../types';
-import { getSettings, saveSettings } from '../../services/settings/settingsService';
+import { getSettings, saveSettings, cacheSettingsLocally } from '../../services/settings/settingsService';
 import TelegramChannel from './channels/TelegramChannel';
 import EmailChannel from './channels/EmailChannel';
 import WebhookChannel from './channels/WebhookChannel';
@@ -25,6 +25,7 @@ const NotificationSettings: React.FC = () => {
   }, []);
 
   const handleChange = (newSettings: AppSettings) => {
+    cacheSettingsLocally(newSettings);
     setSettings(newSettings);
     setHasChanges(true);
     setSaveStatus('idle');

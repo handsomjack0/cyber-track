@@ -12,6 +12,32 @@ const DEFAULT_SETTINGS: AppSettings = {
   webhook: { enabled: false, url: '' }
 };
 
+const parseJsonField = <T>(value: unknown, fallback: T): T => {
+  if (!value) return fallback;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value) as T;
+      return parsed ?? fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  if (typeof value === 'object') {
+    return { ...fallback, ...(value as Partial<T>) };
+  }
+  return fallback;
+};
+
+const normalizeFromDb = (row: any): AppSettings => ({
+  reminderDays:
+    typeof row?.reminderDays === 'number' && Number.isFinite(row.reminderDays)
+      ? row.reminderDays
+      : DEFAULT_SETTINGS.reminderDays,
+  telegram: parseJsonField(row?.telegram, DEFAULT_SETTINGS.telegram),
+  email: parseJsonField(row?.email, DEFAULT_SETTINGS.email),
+  webhook: parseJsonField(row?.webhook, DEFAULT_SETTINGS.webhook)
+});
+
 export const onRequestGet = async (context: { env: Env, request: Request }) => {
   if (!checkAuth(context.request, context.env)) {
     return errorResponse('Unauthorized', 401);
@@ -25,13 +51,7 @@ export const onRequestGet = async (context: { env: Env, request: Request }) => {
     return jsonResponse(DEFAULT_SETTINGS);
   }
 
-  // Drizzle automatically parses the JSON text columns back to objects because of { mode: 'json' } in schema
-  return jsonResponse({
-    reminderDays: result.reminderDays,
-    telegram: result.telegram,
-    email: result.email,
-    webhook: result.webhook
-  });
+  return jsonResponse(normalizeFromDb(result));
 };
 
 export const onRequestPost = async (context: { env: Env, request: Request }) => {
@@ -45,12 +65,7 @@ export const onRequestPost = async (context: { env: Env, request: Request }) => 
 
     // Get current to merge, or use default
     const currentDb = await db.select().from(settings).where(eq(settings.id, GLOBAL_ID)).get();
-    const current = currentDb ? {
-      reminderDays: currentDb.reminderDays,
-      telegram: currentDb.telegram,
-      email: currentDb.email,
-      webhook: currentDb.webhook
-    } : DEFAULT_SETTINGS;
+    const current = currentDb ? normalizeFromDb(currentDb) : DEFAULT_SETTINGS;
     
     const newSettings = {
       id: GLOBAL_ID,

@@ -95,6 +95,39 @@ export interface AppSettings {
   };
 }
 
+const DEFAULT_APP_SETTINGS: AppSettings = {
+  reminderDays: 7,
+  telegram: { enabled: false, chatId: '' },
+  email: { enabled: false, email: '' },
+  webhook: { enabled: false, url: '' }
+};
+
+const parseJsonField = <T>(value: unknown, fallback: T): T => {
+  if (!value) return fallback;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value) as T;
+      return parsed ?? fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  if (typeof value === 'object') {
+    return { ...fallback, ...(value as Partial<T>) };
+  }
+  return fallback;
+};
+
+const normalizeSettingsRow = (row: any): AppSettings => ({
+  reminderDays:
+    typeof row?.reminderDays === 'number' && Number.isFinite(row.reminderDays)
+      ? row.reminderDays
+      : DEFAULT_APP_SETTINGS.reminderDays,
+  telegram: parseJsonField(row?.telegram, DEFAULT_APP_SETTINGS.telegram),
+  email: parseJsonField(row?.email, DEFAULT_APP_SETTINGS.email),
+  webhook: parseJsonField(row?.webhook, DEFAULT_APP_SETTINGS.webhook)
+});
+
 // Helper to initialize Drizzle
 export function getDb(env: Env) {
   return drizzle(env.DB, { schema });
@@ -141,20 +174,10 @@ export async function getSettings(env: Env): Promise<AppSettings> {
   const result = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
   
   if (result) {
-    return {
-      reminderDays: result.reminderDays,
-      telegram: result.telegram,
-      email: result.email,
-      webhook: result.webhook
-    };
+    return normalizeSettingsRow(result);
   }
   
-  return {
-    reminderDays: 7,
-    telegram: { enabled: false, chatId: '' },
-    email: { enabled: false, email: '' },
-    webhook: { enabled: false, url: '' }
-  };
+  return DEFAULT_APP_SETTINGS;
 }
 
 export async function getResources(env: Env): Promise<Resource[]> {
