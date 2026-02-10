@@ -32,7 +32,7 @@ const PROVIDER_MODELS: Record<AiProvider, { label: string; value: string }[]> = 
     { label: 'mistral-small', value: 'mistral-small' }
   ],
   custom: [
-    { label: '自定义模型', value: 'custom-model' }
+    { label: '自定义模型', value: '' }
   ],
   gemini: [
     { label: 'gemini-1.5-flash', value: 'gemini-1.5-flash' },
@@ -221,7 +221,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
             </select>
             <div className="relative">
               <input
-                list={`ai-models-${provider}`}
+                {...(provider !== 'custom' ? { list: `ai-models-${provider}` } : {})}
                 value={model}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -233,11 +233,13 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
                 placeholder="输入模型名"
                 className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[200px]"
               />
-              <datalist id={`ai-models-${provider}`}>
-                {PROVIDER_MODELS[provider].map((item) => (
-                  <option key={item.value} value={item.value}>{item.label}</option>
-                ))}
-              </datalist>
+              {provider !== 'custom' && (
+                <datalist id={`ai-models-${provider}`}>
+                  {PROVIDER_MODELS[provider].map((item) => (
+                    <option key={item.value} value={item.value}>{item.label}</option>
+                  ))}
+                </datalist>
+              )}
             </div>
             {provider === 'custom' && (
               <input
