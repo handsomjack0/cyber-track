@@ -10,6 +10,7 @@ export async function handleStart(env: Env, chatId: number) {
                `• /expiring - 30 天内到期\n` +
                `• /list - 全部资源\n` +
                `• /search <关键词> - 搜索资源\n` +
+               `• /detail <ID/关键词> - 查看资产详情\n` +
                `• /ai <问题> - 智能问答\n` +
                `• /help - 查看全部指令`;
 
@@ -25,6 +26,7 @@ export async function handleHelp(env: Env, chatId: number) {
                `/expiring - 30 天内到期\n` +
                `/list - 全部资源\n` +
                `/search <关键词> - 搜索资源\n` +
+               `/detail <ID/关键词> - 查看资产详情\n` +
                `/ai <问题> - 智能问答\n\n` +
                `<b>分类查看</b>\n` +
                `/vps - VPS 资源\n` +

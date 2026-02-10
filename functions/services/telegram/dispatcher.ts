@@ -3,7 +3,7 @@ import { Env, getResources, Resource, ResourceType } from '../../utils/storage';
 import { TelegramMessage } from './types';
 import { isAuthorized } from './auth';
 import { handleStart, handleHelp, handleUnauthorized } from './handlers/general';
-import { handleStatus, handleList, handleExpiring, handleSearch } from './handlers/resources';
+import { handleStatus, handleList, handleExpiring, handleSearch, handleDetail } from './handlers/resources';
 import { handleAiMessage } from './handlers/ai';
 
 // Main Command Processor
@@ -43,7 +43,7 @@ export async function processTelegramCommand(env: Env, message: TelegramMessage)
 
     // 3. Pre-fetch resources for commands that need them
     let resources: Resource[] = [];
-    const resourceCommands = ['/status', '/list', '/expiring', '/search', '/vps', '/domains', '/accounts', '/cellphones'];
+    const resourceCommands = ['/status', '/list', '/expiring', '/search', '/detail', '/vps', '/domains', '/accounts', '/cellphones'];
     
     if (resourceCommands.includes(command)) {
       resources = await getResources(env);
@@ -77,6 +77,9 @@ export async function processTelegramCommand(env: Env, message: TelegramMessage)
         break;
       case '/search':
         await handleSearch(env, chatId, resources, args);
+        break;
+      case '/detail':
+        await handleDetail(env, chatId, resources, args);
         break;
       case '/help':
         await handleHelp(env, chatId);

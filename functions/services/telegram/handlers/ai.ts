@@ -34,7 +34,7 @@ Rules:
 - Reply in concise, friendly Chinese.
 - Keep answers short (3-8 lines, max ~220 Chinese chars).
 - If the question is about assets, use the data above.
-- If you need a command for details, suggest the relevant slash command.
+- Only suggest existing commands: /status /expiring /list /search /detail /vps /domains /accounts /cellphones /help.
 - Do not include JSON in the response.
 `;
 

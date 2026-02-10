@@ -72,6 +72,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       { command: 'status', description: 'Asset overview and expirations' },
       { command: 'expiring', description: 'Assets expiring in 30 days' },
       { command: 'list', description: 'List all assets' },
+      { command: 'detail', description: 'View asset details: /detail keyword' },
       { command: 'ai', description: 'AI Q&A' },
       { command: 'vps', description: 'List VPS assets' },
       { command: 'domains', description: 'List domain assets' },

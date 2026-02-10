@@ -95,3 +95,35 @@ export async function handleSearch(env: Env, chatId: number, resources: Resource
   const text = formatResourceList(results, `搜索结果: "${query}"`);
   await sendMessage(env.TELEGRAM_BOT_TOKEN!, { chat_id: chatId, text, parse_mode: 'HTML' });
 }
+
+export async function handleDetail(env: Env, chatId: number, resources: Resource[], query: string) {
+  const keyword = (query || '').trim();
+  if (!keyword) {
+    await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
+      chat_id: chatId,
+      text: '📌 请提供资产 ID 或关键词，例如：<code>/detail my-vps</code>',
+      parse_mode: 'HTML'
+    });
+    return;
+  }
+
+  const byId = resources.find(r => r.id === keyword);
+  const match = byId || resources.find(r =>
+    r.id.toLowerCase().includes(keyword.toLowerCase()) ||
+    r.name.toLowerCase().includes(keyword.toLowerCase()) ||
+    r.provider.toLowerCase().includes(keyword.toLowerCase())
+  );
+
+  if (!match) {
+    await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
+      chat_id: chatId,
+      text: `未找到与 “${keyword}” 匹配的资产。可先使用 <code>/search ${keyword}</code> 查看候选项。`,
+      parse_mode: 'HTML'
+    });
+    return;
+  }
+
+  const text = `🔎 <b>资产详情</b>\n\n${formatResourceItem(match)}\n\n` +
+               `<b>ID:</b> <code>${match.id}</code>`;
+  await sendMessage(env.TELEGRAM_BOT_TOKEN!, { chat_id: chatId, text, parse_mode: 'HTML' });
+}
