@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Resource } from '../../types';
@@ -9,50 +9,106 @@ interface AIAssistantProps {
   resources: Resource[];
 }
 
+const AI_SETTINGS_KEY = 'cloudtrack_ai_settings_v1';
+
+const PROVIDER_MODELS: Record<AiProvider, { label: string; value: string }[]> = {
+  openai: [
+    { label: 'gpt-4o-mini (推荐)', value: 'gpt-4o-mini' },
+    { label: 'gpt-4o', value: 'gpt-4o' },
+    { label: 'gpt-4.1-mini', value: 'gpt-4.1-mini' }
+  ],
+  deepseek: [
+    { label: 'deepseek-chat', value: 'deepseek-chat' },
+    { label: 'deepseek-reasoner', value: 'deepseek-reasoner' }
+  ],
+  openrouter: [
+    { label: 'openrouter/auto', value: 'openrouter/auto' },
+    { label: 'openai/gpt-4o-mini', value: 'openai/gpt-4o-mini' },
+    { label: 'deepseek/deepseek-chat', value: 'deepseek/deepseek-chat' }
+  ],
+  github: [
+    { label: 'gpt-4o-mini', value: 'gpt-4o-mini' },
+    { label: 'phi-3-mini', value: 'phi-3-mini' },
+    { label: 'mistral-small', value: 'mistral-small' }
+  ],
+  custom: [
+    { label: '自定义模型', value: 'custom-model' }
+  ],
+  gemini: [
+    { label: 'gemini-1.5-flash', value: 'gemini-1.5-flash' },
+    { label: 'gemini-1.5-pro', value: 'gemini-1.5-pro' }
+  ]
+};
+
+const getDefaultModel = (provider: AiProvider) => PROVIDER_MODELS[provider][0]?.value || '';
+
+type AiSettingsCache = {
+  provider: AiProvider;
+  models: Partial<Record<AiProvider, string>>;
+  customId?: string;
+};
+
+const readAiSettings = (): AiSettingsCache | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(AI_SETTINGS_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as AiSettingsCache;
+  } catch {
+    return null;
+  }
+};
+
 const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [provider, setProvider] = useState<AiProvider>('openai');
-  const [model, setModel] = useState('gpt-4o-mini');
+  const [modelByProvider, setModelByProvider] = useState<Record<AiProvider, string>>({
+    openai: getDefaultModel('openai'),
+    deepseek: getDefaultModel('deepseek'),
+    openrouter: getDefaultModel('openrouter'),
+    github: getDefaultModel('github'),
+    custom: getDefaultModel('custom'),
+    gemini: getDefaultModel('gemini')
+  });
+  const [customId, setCustomId] = useState('');
   const [cacheNote, setCacheNote] = useState<string | null>(null);
 
-  const providerModels: Record<AiProvider, { label: string; value: string }[]> = {
-    openai: [
-      { label: 'gpt-4o-mini (推荐)', value: 'gpt-4o-mini' },
-      { label: 'gpt-4o', value: 'gpt-4o' },
-      { label: 'gpt-4.1-mini', value: 'gpt-4.1-mini' }
-    ],
-    deepseek: [
-      { label: 'deepseek-chat', value: 'deepseek-chat' },
-      { label: 'deepseek-reasoner', value: 'deepseek-reasoner' }
-    ],
-    openrouter: [
-      { label: 'openrouter/auto', value: 'openrouter/auto' },
-      { label: 'openai/gpt-4o-mini', value: 'openai/gpt-4o-mini' },
-      { label: 'deepseek/deepseek-chat', value: 'deepseek/deepseek-chat' }
-    ],
-    github: [
-      { label: 'gpt-4o-mini', value: 'gpt-4o-mini' },
-      { label: 'phi-3-mini', value: 'phi-3-mini' },
-      { label: 'mistral-small', value: 'mistral-small' }
-    ],
-    custom: [
-      { label: '自定义模型', value: 'custom-model' }
-    ],
-    gemini: [
-      { label: 'gemini-1.5-flash', value: 'gemini-1.5-flash' },
-      { label: 'gemini-1.5-pro', value: 'gemini-1.5-pro' }
-    ]
-  };
+  const model = modelByProvider[provider] || getDefaultModel(provider);
+
+  useEffect(() => {
+    const saved = readAiSettings();
+    if (!saved) return;
+
+    setProvider(saved.provider || 'openai');
+    if (saved.models) {
+      setModelByProvider(prev => ({ ...prev, ...saved.models }));
+    }
+    setCustomId(saved.customId || '');
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(
+        AI_SETTINGS_KEY,
+        JSON.stringify({
+          provider,
+          models: modelByProvider,
+          customId: customId.trim() || undefined
+        } as AiSettingsCache)
+      );
+    } catch {
+      // ignore storage errors
+    }
+  }, [provider, modelByProvider, customId]);
 
   const handleProviderChange = (next: AiProvider) => {
     setProvider(next);
-    const models = providerModels[next];
-    if (models && models.length > 0) {
-      setModel(models[0].value);
-    } else {
-      setModel('');
-    }
+    setModelByProvider(prev => ({
+      ...prev,
+      [next]: prev[next] || getDefaultModel(next)
+    }));
   };
 
   const hashResources = (items: Resource[]) => {
@@ -104,7 +160,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
     setAnalysis(null);
     setCacheNote(null);
     try {
-      const result = await analyzePortfolio(resources, provider, model);
+      const result = await analyzePortfolio(
+        resources,
+        provider,
+        model,
+        provider === 'custom' ? (customId.trim() || undefined) : undefined
+      );
       setAnalysis(result);
       writeCache(result);
     } catch (error) {
@@ -162,16 +223,30 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
               <input
                 list={`ai-models-${provider}`}
                 value={model}
-                onChange={(e) => setModel(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setModelByProvider(prev => ({
+                    ...prev,
+                    [provider]: value
+                  }));
+                }}
                 placeholder="输入模型名"
                 className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[200px]"
               />
               <datalist id={`ai-models-${provider}`}>
-                {providerModels[provider].map((item) => (
+                {PROVIDER_MODELS[provider].map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </datalist>
             </div>
+            {provider === 'custom' && (
+              <input
+                value={customId}
+                onChange={(e) => setCustomId(e.target.value)}
+                placeholder="公益站标识（可选，如 daiju）"
+                className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[240px]"
+              />
+            )}
           </div>
 
           <button
@@ -212,7 +287,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
             </div>
             <div className="space-y-2">
               <p className="text-slate-900 dark:text-white font-medium">正在生成分析报告...</p>
-              <p className="text-slate-400 text-xs">正在请求 Gemini 模型分析你的资产组合</p>
+              <p className="text-slate-400 text-xs">正在请求 {provider.toUpperCase()} 模型分析你的资产组合</p>
             </div>
           </div>
         )}

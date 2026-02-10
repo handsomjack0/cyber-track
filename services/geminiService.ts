@@ -10,7 +10,8 @@ const getHeaders = () => ({
 export const analyzePortfolio = async (
   resources: Resource[],
   provider: AiProvider,
-  model: string
+  model: string,
+  customId?: string
 ): Promise<string> => {
   try {
     const response = await requestJson<{ analysis?: string; error?: string }>(
@@ -18,7 +19,7 @@ export const analyzePortfolio = async (
       {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ resources, provider, model }),
+        body: JSON.stringify({ resources, provider, model, customId }),
         timeoutMs: 30000
       }
     );
@@ -44,6 +45,12 @@ export const analyzePortfolio = async (
             return 'Gemini 未配置 Key。请设置 API_KEY，或切换到其他平台。';
           case 'CUSTOM_ENDPOINT_NOT_FOUND':
             return '自建公益站标识不存在，请检查 customId 或 CUSTOM_AI_ENDPOINTS。';
+          case 'AI_MODEL_NOT_FOUND':
+            return '当前模型不存在或拼写不正确。请更换可用模型，或检查自建平台的模型列表。';
+          case 'AI_MODEL_UNAVAILABLE':
+            return '当前模型在上游暂时不可用（无可用渠道）。请稍后重试或切换其他模型/平台。';
+          case 'AI_UPSTREAM_UNAVAILABLE':
+            return '上游 AI 服务暂时不可用（503）。请稍后重试，或切换到其他平台。';
           default:
             return error.message;
         }
