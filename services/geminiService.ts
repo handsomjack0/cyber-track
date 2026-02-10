@@ -7,6 +7,30 @@ const getHeaders = () => ({
   'Content-Type': 'application/json'
 });
 
+const normalizeAnalysisMarkdown = (input: string): string => {
+  let text = (input || '').replace(/\r\n/g, '\n').trim();
+
+  const headingMap: Array<{ pattern: RegExp; replace: string }> = [
+    { pattern: /^\s*资产管理总览\s*$/m, replace: '## 资产管理总览' },
+    { pattern: /^\s*1\.\s*紧急预警[^\n]*$/m, replace: '### 1. 紧急预警（30 天内）' },
+    { pattern: /^\s*2\.\s*成本分析\s*$/m, replace: '### 2. 成本分析' },
+    { pattern: /^\s*3\.\s*优化建议[^\n]*$/m, replace: '### 3. 优化建议（按优先级）' },
+    { pattern: /^\s*4\.\s*待确认信息\s*$/m, replace: '### 4. 待确认信息' }
+  ];
+
+  for (const item of headingMap) {
+    text = text.replace(item.pattern, item.replace);
+  }
+
+  // Fix common collapsed-table output: "类型拆分表： | ... | | --- ..."
+  text = text.replace(/类型拆分表：\s*\|/g, '类型拆分表：\n|');
+  text = text.replace(/\s+\|\s+\|\s+/g, ' |\n| ');
+
+  // Ensure stable spacing for markdown parser
+  text = text.replace(/\n{3,}/g, '\n\n');
+  return text;
+};
+
 export const analyzePortfolio = async (
   resources: Resource[],
   provider: AiProvider,
@@ -24,7 +48,7 @@ export const analyzePortfolio = async (
       }
     );
 
-    if (response.data?.analysis) return response.data.analysis;
+    if (response.data?.analysis) return normalizeAnalysisMarkdown(response.data.analysis);
     return 'AI 暂未返回内容，请检查模型名称或接口配置。';
   } catch (error) {
     if (error instanceof ApiError) {
