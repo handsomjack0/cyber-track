@@ -1,4 +1,4 @@
-﻿import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import { Env, getResources, Resource } from '../../../utils/storage';
 import { sendMessage } from '../client';
 import { AiProvider, getAiRuntimeSettings, pickFirstAvailableProvider } from '../../../services/ai/config';
@@ -6,18 +6,33 @@ import { callOpenAICompatible, withTimeout } from '../../../services/ai/client';
 
 const AI_PROVIDERS: AiProvider[] = ['openai', 'deepseek', 'openrouter', 'github', 'custom', 'gemini'];
 
+const toCompactResources = (resources: Resource[]) =>
+  resources.slice(0, 80).map(r => ({
+    id: r.id,
+    name: r.name,
+    provider: r.provider,
+    type: r.type,
+    expiryDate: r.expiryDate,
+    cost: r.cost,
+    currency: r.currency,
+    billingCycle: r.billingCycle,
+    autoRenew: r.autoRenew,
+    tags: r.tags || [],
+    status: r.status
+  }));
+
 const buildPrompt = (resources: Resource[], userText: string) => `
 You are the cyberTrack Telegram assistant. You help the user understand and manage IT assets.
 
-Resources (JSON):
-${JSON.stringify(resources)}
+Resources (JSON, compact):
+${JSON.stringify(toCompactResources(resources))}
 
 User question:
 ${userText}
 
 Rules:
 - Reply in concise, friendly Chinese.
-- Keep answers short (3-8 lines).
+- Keep answers short (3-8 lines, max ~220 Chinese chars).
 - If the question is about assets, use the data above.
 - If you need a command for details, suggest the relevant slash command.
 - Do not include JSON in the response.
@@ -52,6 +67,26 @@ function parseAiCommand(text: string) {
   const question = parts.slice(1).join(' ');
   return { question, list: false };
 }
+
+const pickTelegramAiErrorMessage = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  const lower = message.toLowerCase();
+
+  if (lower.includes('timed out')) {
+    return 'AI 响应超时。请稍后重试，或提问更简短的问题。';
+  }
+  if (lower.includes('model_not_found') || lower.includes('model not found')) {
+    return 'AI 模型不可用。请检查 CUSTOM_AI_ENDPOINTS 的模型配置，或切换平台。';
+  }
+  if (message.includes('无可用渠道') || lower.includes('no available distributor') || lower.includes('distributor')) {
+    return 'AI 上游渠道当前不可用。请稍后重试，或更换模型。';
+  }
+  if (lower.includes('(429)') || lower.includes('rate limit')) {
+    return 'AI 请求过于频繁（限流）。请稍后再试。';
+  }
+
+  return 'AI 暂时不可用，请稍后重试，或使用 /help /status 等指令。';
+};
 
 export async function handleAiMessage(
   env: Env,
@@ -107,19 +142,56 @@ export async function handleAiMessage(
       ) as Awaited<ReturnType<typeof ai.models.generateContent>>;
       reply = response.text || '';
     } else {
-      reply = await callOpenAICompatible({
-        url: picked.url!,
-        apiKey: picked.apiKey,
-        model: picked.model,
-        prompt,
-        extraHeaders: picked.extraHeaders,
-        mode: picked.mode,
-        timeoutMs: runtime.timeoutMs,
-        retries: runtime.retries,
-        retryDelayMs: runtime.retryDelayMs,
-        temperature: runtime.temperature,
-        maxTokens: runtime.maxTokens
-      });
+      const runWithModel = (model: string) =>
+        callOpenAICompatible({
+          url: picked.url!,
+          apiKey: picked.apiKey,
+          model,
+          prompt,
+          extraHeaders: picked.extraHeaders,
+          mode: picked.mode,
+          timeoutMs: runtime.timeoutMs,
+          retries: runtime.retries,
+          retryDelayMs: runtime.retryDelayMs,
+          temperature: runtime.temperature,
+          maxTokens: runtime.maxTokens
+        });
+
+      try {
+        reply = await runWithModel(picked.model);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        const lower = message.toLowerCase();
+        const needsModelFallback =
+          picked.provider === 'custom' &&
+          (lower.includes('model_not_found') ||
+            lower.includes('model not found') ||
+            message.includes('无可用渠道') ||
+            lower.includes('no available distributor') ||
+            lower.includes('distributor'));
+
+        if (!needsModelFallback) throw e;
+
+        const fallbackModels = [
+          env.AI_CUSTOM_MODEL,
+          env.AI_DEFAULT_MODEL,
+          'deepseek-chat',
+          'DeepSeek-V3.1-cb',
+          'deepseek-reasoner'
+        ].filter((v, i, arr): v is string => Boolean(v && arr.indexOf(v) === i));
+
+        let success = false;
+        for (const fallbackModel of fallbackModels) {
+          try {
+            reply = await runWithModel(fallbackModel);
+            success = true;
+            break;
+          } catch {
+            // continue
+          }
+        }
+        if (!success) throw e;
+      }
     }
 
     const safeReply = reply?.trim();
@@ -135,7 +207,7 @@ export async function handleAiMessage(
     console.error('Telegram AI Error:', error);
     await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
       chat_id: chatId,
-      text: 'AI 暂时不可用，请稍后重试，或使用 /help /status 等指令。'
+      text: pickTelegramAiErrorMessage(error)
     });
   }
 }
