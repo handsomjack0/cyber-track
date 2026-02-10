@@ -20,7 +20,7 @@ export const analyzePortfolio = async (
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({ resources, provider, model, customId }),
-        timeoutMs: 30000
+        timeoutMs: 100000
       }
     );
 

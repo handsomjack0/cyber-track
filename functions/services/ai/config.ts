@@ -61,11 +61,11 @@ const PROVIDER_ERRORS: Record<AiProvider, { code: string; message: string }> = {
 };
 
 const DEFAULT_RUNTIME: AiRuntimeSettings = {
-  timeoutMs: 12000,
+  timeoutMs: 45000,
   retries: 1,
-  retryDelayMs: 400,
+  retryDelayMs: 800,
   temperature: 0.4,
-  maxTokens: 800
+  maxTokens: 600
 };
 
 const parseNumber = (value: string | undefined, fallback: number) => {
