@@ -1,4 +1,4 @@
-import { Env, jsonResponse } from '../../utils/storage';
+import { Env, jsonResponse, checkAuth } from '../../utils/storage';
 
 export const onRequestGet = async (context: { env: Env; request: Request }) => {
   const { env, request } = context;
@@ -17,17 +17,15 @@ export const onRequestGet = async (context: { env: Env; request: Request }) => {
     return `${safeUser}@${domain}`;
   };
 
-  if ((accessMode === 'cloudflare' || accessMode === 'hybrid') && accessEmail) {
-    return jsonResponse({
-      authenticated: true,
-      provider: 'cloudflare-access',
-      email: accessEmail,
-      ...(debug ? { debug: { accessMode, hasAccessHeader, email: maskEmail(accessEmail) } } : {})
-    });
-  }
+  const authenticated = checkAuth(request, env);
+  const provider = accessEmail
+    ? 'cloudflare-access'
+    : (request.headers.get('x-api-key') ? 'api-key' : 'none');
 
   return jsonResponse({
-    authenticated: false,
-    ...(debug ? { debug: { accessMode, hasAccessHeader } } : {})
+    authenticated,
+    provider,
+    ...(accessEmail ? { email: accessEmail } : {}),
+    ...(debug ? { debug: { accessMode, hasAccessHeader, ...(accessEmail ? { email: maskEmail(accessEmail) } : {}) } } : {})
   });
 };

@@ -23,10 +23,20 @@ const getHeaders = () => ({
   'Content-Type': 'application/json'
 });
 
+const readLocalSettings = (): AppSettings | null => {
+  const stored = localStorage.getItem('cloudtrack_settings');
+  if (!stored) return null;
+  try {
+    return JSON.parse(stored) as AppSettings;
+  } catch {
+    localStorage.removeItem('cloudtrack_settings');
+    return null;
+  }
+};
+
 export const getSettings = async (): Promise<AppSettings> => {
   // 1. Try to get Local Storage first (for backup)
-  const stored = localStorage.getItem('cloudtrack_settings');
-  const localData = stored ? JSON.parse(stored) : null;
+  const localData = readLocalSettings();
 
   try {
     const res = await requestJson<AppSettings>('/api/v1/settings', {

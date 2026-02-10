@@ -7,7 +7,7 @@ import AccountForm from './forms/AccountForm';
 interface AddResourceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (resource: Resource) => void;
+  onSave: (resource: Partial<Resource>) => void;
   initialData?: Resource | null;
 }
 
@@ -66,8 +66,8 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ isOpen, onClose, on
   if (!isOpen) return null;
 
   const handleFormSubmit = (data: Partial<Resource>) => {
-    const resourceToSave: Resource = {
-      id: initialData?.id || Date.now().toString(),
+    const resourceToSave: Partial<Resource> = {
+      ...(initialData?.id ? { id: initialData.id } : {}),
       name: data.name!,
       provider: data.provider!,
       expiryDate: data.expiryDate,

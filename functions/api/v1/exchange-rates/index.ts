@@ -1,4 +1,4 @@
-import { Env, jsonResponse } from '../../../utils/storage';
+import { Env, jsonResponse, errorResponse, checkAuth } from '../../../utils/storage';
 
 interface RatesPayload {
   rates: Record<string, number>;
@@ -30,8 +30,11 @@ const fetchLiveRates = async () => {
   return processed;
 };
 
-export const onRequestGet = async (context: { env: Env }) => {
-  const { env } = context;
+export const onRequestGet = async (context: { env: Env; request: Request }) => {
+  const { env, request } = context;
+  if (!checkAuth(request, env)) {
+    return errorResponse('Unauthorized', 401);
+  }
   const kv = env.CLOUDTRACK_KV;
 
   try {

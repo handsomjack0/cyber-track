@@ -1,9 +1,5 @@
 import { sendEmailResend } from '../services/email/resend';
-
-interface Env {
-  RESEND_API_KEY?: string;
-  RESEND_FROM?: string;
-}
+import { Env, checkAuth } from '../utils/storage';
 
 interface RequestBody {
   to: string;
@@ -14,6 +10,12 @@ interface RequestBody {
 
 export const onRequestPost = async (context: { request: Request; env: Env }) => {
   const { request, env } = context;
+  if (!checkAuth(request, env)) {
+    return new Response(JSON.stringify({ ok: false, description: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 
   if (!env.RESEND_API_KEY || !env.RESEND_FROM) {
     return new Response(JSON.stringify({

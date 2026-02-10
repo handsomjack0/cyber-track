@@ -1,8 +1,14 @@
-import { Env } from '../../utils/storage';
+import { Env, checkAuth } from '../../utils/storage';
 import { getMyCommands } from '../../services/telegram/client';
 
 export const onRequestGet = async (context: { request: Request; env: Env }) => {
-  const { env } = context;
+  const { env, request } = context;
+  if (!checkAuth(request, env)) {
+    return new Response(JSON.stringify({ ok: false, description: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 
   if (!env.TELEGRAM_BOT_TOKEN) {
     return new Response(JSON.stringify({

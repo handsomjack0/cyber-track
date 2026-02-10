@@ -6,14 +6,14 @@ pages_build_output_dir = "dist"
 # Create a KV namespace in Cloudflare and bind it here.
 [[kv_namespaces]]
 binding = "CLOUDTRACK_KV"
-id = "68b2e21078af4e598a1406be0fc2598f"
+id = "YOUR_KV_NAMESPACE_ID"
 
 # D1 数据库绑定
 # 【重要】请将 database_id 替换为您自己在 Cloudflare D1 创建的数据库 ID
 [[d1_databases]]
 binding = "DB"
 database_name = "cybertrack-db"
-database_id = "3048df8f-b102-450b-9f35-351a6dac9587"
+database_id = "YOUR_D1_DATABASE_ID"
 
 # 环境变量配置
 # 注意：API_SECRET 和 TELEGRAM_BOT_TOKEN 等敏感信息不应在此处硬编码

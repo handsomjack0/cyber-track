@@ -119,16 +119,21 @@ export function checkAuth(request: Request, env: Env): boolean {
   const accessEmail =
     request.headers.get('cf-access-authenticated-user-email') ||
     request.headers.get('CF-Access-Authenticated-User-Email');
+  const hasCloudflareAccess = Boolean(accessEmail);
+  const apiKey = request.headers.get('x-api-key');
+  const hasApiSecret = Boolean(env.API_SECRET);
+  const apiKeyMatched = hasApiSecret && apiKey === env.API_SECRET;
 
-  if ((accessMode === 'cloudflare' || accessMode === 'hybrid') && accessEmail) {
-    return true;
+  if (accessMode === 'cloudflare') {
+    return hasCloudflareAccess;
   }
 
-  if (accessMode === 'cloudflare') return false;
+  if (accessMode === 'hybrid') {
+    return hasCloudflareAccess || apiKeyMatched;
+  }
 
-  const apiKey = request.headers.get('x-api-key');
-  if (!env.API_SECRET) return true;
-  return apiKey === env.API_SECRET;
+  // access-code mode
+  return apiKeyMatched;
 }
 
 export async function getSettings(env: Env): Promise<AppSettings> {

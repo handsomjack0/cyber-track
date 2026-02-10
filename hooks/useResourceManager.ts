@@ -72,7 +72,7 @@ export const useResourceManager = () => {
     }
   }, [fetchResources]);
 
-  const addResource = async (resourceData: Resource) => {
+  const addResource = async (resourceData: Partial<Resource>) => {
     // Optimistic UI update can be complex with ID generation,
     // so we'll wait for the server for creation to be safe,
     // or manually generate ID here.

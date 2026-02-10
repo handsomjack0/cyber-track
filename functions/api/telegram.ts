@@ -1,8 +1,5 @@
-﻿import { sendMessage } from '../services/telegram/client';
-
-interface Env {
-  TELEGRAM_BOT_TOKEN: string;
-}
+import { sendMessage } from '../services/telegram/client';
+import { checkAuth, Env } from '../utils/storage';
 
 interface RequestBody {
   chatId: string;
@@ -11,6 +8,13 @@ interface RequestBody {
 
 export const onRequestPost = async (context: { request: Request; env: Env }) => {
   const { request, env } = context;
+
+  if (!checkAuth(request, env)) {
+    return new Response(JSON.stringify({ ok: false, description: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 
   // 1. Security Check
   if (!env.TELEGRAM_BOT_TOKEN) {

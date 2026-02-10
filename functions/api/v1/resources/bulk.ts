@@ -1,6 +1,7 @@
 
 import { Env, getDb, jsonResponse, errorResponse, checkAuth, Resource, getSettings } from '../../../utils/storage';
 import { resources } from '../../../db/schema';
+import { sql } from 'drizzle-orm';
 import { sendResourceChangeNotification } from '../../../services/notifications/sender';
 
 export const onRequestPost = async (context: { env: Env, request: Request }) => {
@@ -85,9 +86,19 @@ export const onRequestPost = async (context: { env: Env, request: Request }) => 
     await db.insert(resources).values(validResources).onConflictDoUpdate({
       target: resources.id,
       set: {
-        name: resources.name, // Just an example of conflict handling, or use DoNothing
-        cost: resources.cost,
-        expiryDate: resources.expiryDate
+        name: sql`excluded.name`,
+        provider: sql`excluded.provider`,
+        expiryDate: sql`excluded.expiry_date`,
+        startDate: sql`excluded.start_date`,
+        cost: sql`excluded.cost`,
+        currency: sql`excluded.currency`,
+        type: sql`excluded.type`,
+        status: sql`excluded.status`,
+        autoRenew: sql`excluded.auto_renew`,
+        billingCycle: sql`excluded.billing_cycle`,
+        notes: sql`excluded.notes`,
+        notificationSettings: sql`excluded.notification_settings`,
+        tags: sql`excluded.tags`
       }
     }).execute();
 

@@ -35,12 +35,12 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const handleSaveResource = async (resourceData: Resource) => {
-    const isEdit = resources.some(r => r.id === resourceData.id);
+  const handleSaveResource = async (resourceData: Partial<Resource>) => {
+    const isEdit = Boolean(resourceData.id) && resources.some(r => r.id === resourceData.id);
 
     try {
       if (isEdit) {
-        await updateResource(resourceData);
+        await updateResource(resourceData as Resource);
       } else {
         await addResource(resourceData);
       }

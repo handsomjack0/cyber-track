@@ -19,12 +19,23 @@ const DEFAULT_RATES: ExchangeRates = {
   'JPY': 0.048
 };
 
+const readLocalRatesCache = (): { timestamp: number; rates: ExchangeRates } | null => {
+  const cached = localStorage.getItem(STORAGE_KEY);
+  if (!cached) return null;
+  try {
+    return JSON.parse(cached) as { timestamp: number; rates: ExchangeRates };
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
+};
+
 export const getExchangeRates = async (): Promise<{ rates: ExchangeRates; source?: string; updatedAt?: string }> => {
   try {
     // 1. Check Local Cache
-    const cached = localStorage.getItem(STORAGE_KEY);
-    if (cached) {
-      const { timestamp, rates } = JSON.parse(cached);
+    const localCache = readLocalRatesCache();
+    if (localCache) {
+      const { timestamp, rates } = localCache;
       if (Date.now() - timestamp < CACHE_DURATION) {
         return { rates, source: 'cache', updatedAt: new Date(timestamp).toISOString() };
       }
