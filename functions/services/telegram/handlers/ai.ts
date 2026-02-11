@@ -1,13 +1,13 @@
 import { GoogleGenAI } from '@google/genai';
 import { Env, getResources, Resource } from '../../../utils/storage';
-import { sendMessage } from '../client';
+import { editMessageText, sendChatAction, sendMessage } from '../client';
 import { AiProvider, getAiRuntimeSettings, pickFirstAvailableProvider } from '../../../services/ai/config';
 import { callOpenAICompatible, withTimeout } from '../../../services/ai/client';
 
 const AI_PROVIDERS: AiProvider[] = ['openai', 'deepseek', 'openrouter', 'github', 'custom', 'gemini'];
 
 const toCompactResources = (resources: Resource[]) =>
-  resources.slice(0, 80).map(r => ({
+  resources.slice(0, 80).map((r) => ({
     id: r.id,
     name: r.name,
     provider: r.provider,
@@ -46,10 +46,10 @@ const hasCustomConfig = (env: Env) =>
 const getPreferredOrder = (env: Env) => {
   const defaultProvider = env.AI_DEFAULT_PROVIDER as AiProvider | undefined;
   if (defaultProvider) {
-    return [defaultProvider, ...AI_PROVIDERS.filter(p => p !== defaultProvider)] as AiProvider[];
+    return [defaultProvider, ...AI_PROVIDERS.filter((p) => p !== defaultProvider)] as AiProvider[];
   }
   if (hasCustomConfig(env)) {
-    return ['custom', ...AI_PROVIDERS.filter(p => p !== 'custom')] as AiProvider[];
+    return ['custom', ...AI_PROVIDERS.filter((p) => p !== 'custom')] as AiProvider[];
   }
   return AI_PROVIDERS;
 };
@@ -76,16 +76,16 @@ const pickTelegramAiErrorMessage = (error: unknown) => {
     return 'AI 响应超时。请稍后重试，或提问更简短的问题。';
   }
   if (lower.includes('model_not_found') || lower.includes('model not found')) {
-    return 'AI 模型不可用。请检查 CUSTOM_AI_ENDPOINTS 的模型配置，或切换平台。';
+    return 'AI 模型不可用。请检查模型配置，或切换模型后重试。';
   }
-  if (message.includes('无可用渠道') || lower.includes('no available distributor') || lower.includes('distributor')) {
+  if (lower.includes('no available distributor') || lower.includes('distributor')) {
     return 'AI 上游渠道当前不可用。请稍后重试，或更换模型。';
   }
   if (lower.includes('(429)') || lower.includes('rate limit')) {
     return 'AI 请求过于频繁（限流）。请稍后再试。';
   }
 
-  return 'AI 暂时不可用，请稍后重试，或使用 /help /status 等指令。';
+  return 'AI 暂时不可用，请稍后重试，或先使用 /status /help 等指令。';
 };
 
 export async function handleAiMessage(
@@ -94,38 +94,75 @@ export async function handleAiMessage(
   userText: string,
   options: { source: 'chat' | 'command' } = { source: 'chat' }
 ) {
-  const parsed = options.source === 'command'
-    ? parseAiCommand(userText)
-    : { question: userText, list: false };
+  let typing = true;
+  let progressMessageId: number | null = null;
 
-  if (options.source === 'command' && parsed.list) {
+  const typingLoop = (async () => {
+    while (typing) {
+      try {
+        await sendChatAction(env.TELEGRAM_BOT_TOKEN!, chatId, 'typing');
+      } catch {
+        // ignore typing indicator failures
+      }
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+    }
+  })();
+
+  const sendOrEdit = async (text: string) => {
+    if (progressMessageId !== null) {
+      const edited = await editMessageText(env.TELEGRAM_BOT_TOKEN!, {
+        chat_id: chatId,
+        message_id: progressMessageId,
+        text,
+        disable_web_page_preview: true
+      });
+      if (edited.ok) return;
+    }
+
     await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
       chat_id: chatId,
-      text: '当前 TGbot 使用与面板一致的 AI 配置（不再单独区分）。'
+      text,
+      disable_web_page_preview: true
     });
-    return;
-  }
-
-  const picked = pickFirstAvailableProvider(env, getPreferredOrder(env));
-  const question = parsed.question?.trim();
-
-  if (!picked) {
-    await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
-      chat_id: chatId,
-      text: 'AI 未配置。请在环境变量中设置可用的 API Key 或自建公益站配置。'
-    });
-    return;
-  }
-
-  if (options.source === 'command' && !question) {
-    await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
-      chat_id: chatId,
-      text: '用法：/ai <问题>\n示例：/ai 哪些资产快到期？'
-    });
-    return;
-  }
+  };
 
   try {
+    const parsed = options.source === 'command' ? parseAiCommand(userText) : { question: userText, list: false };
+
+    if (options.source === 'command' && parsed.list) {
+      await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
+        chat_id: chatId,
+        text: '当前 TGbot 使用与面板一致的 AI 配置（不再单独区分）。'
+      });
+      return;
+    }
+
+    const picked = pickFirstAvailableProvider(env, getPreferredOrder(env));
+    const question = parsed.question?.trim();
+
+    if (!picked) {
+      await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
+        chat_id: chatId,
+        text: 'AI 未配置。请在环境变量中设置可用的 API Key 或自建通道配置。'
+      });
+      return;
+    }
+
+    if (options.source === 'command' && !question) {
+      await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
+        chat_id: chatId,
+        text: '用法：/ai <问题>\n示例：/ai 哪些资产快到期？'
+      });
+      return;
+    }
+
+    const progress = await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
+      chat_id: chatId,
+      text: '🛰 已收到，正在整理数据并生成回复...',
+      disable_web_page_preview: true
+    });
+    progressMessageId = progress.result?.message_id ?? null;
+
     const resources = await getResources(env);
     const prompt = buildPrompt(resources, question || '');
     const runtime = getAiRuntimeSettings(env, { maxTokens: 500 });
@@ -133,13 +170,13 @@ export async function handleAiMessage(
 
     if (picked.kind === 'gemini') {
       const ai = new GoogleGenAI({ apiKey: picked.apiKey! });
-      const response = await withTimeout(
+      const response = (await withTimeout(
         ai.models.generateContent({
           model: picked.model,
           contents: prompt
         }),
         runtime.timeoutMs
-      ) as Awaited<ReturnType<typeof ai.models.generateContent>>;
+      )) as Awaited<ReturnType<typeof ai.models.generateContent>>;
       reply = response.text || '';
     } else {
       const runWithModel = (model: string) =>
@@ -166,7 +203,6 @@ export async function handleAiMessage(
           picked.provider === 'custom' &&
           (lower.includes('model_not_found') ||
             lower.includes('model not found') ||
-            message.includes('无可用渠道') ||
             lower.includes('no available distributor') ||
             lower.includes('distributor'));
 
@@ -196,18 +232,16 @@ export async function handleAiMessage(
 
     const safeReply = reply?.trim();
     if (!safeReply) {
-      await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
-        chat_id: chatId,
-        text: 'AI 返回为空，请检查模型名或接口路径是否正确（chat/completions vs completions）。'
-      });
+      await sendOrEdit('AI 返回为空，请检查模型名或接口路径是否正确（chat/completions vs completions）。');
       return;
     }
-    await sendMessage(env.TELEGRAM_BOT_TOKEN!, { chat_id: chatId, text: safeReply });
+
+    await sendOrEdit(safeReply);
   } catch (error) {
     console.error('Telegram AI Error:', error);
-    await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
-      chat_id: chatId,
-      text: pickTelegramAiErrorMessage(error)
-    });
+    await sendOrEdit(pickTelegramAiErrorMessage(error));
+  } finally {
+    typing = false;
+    void typingLoop;
   }
 }

@@ -5,6 +5,7 @@ import { isAuthorized } from './auth';
 import { handleStart, handleHelp, handleUnauthorized } from './handlers/general';
 import { handleStatus, handleList, handleExpiring, handleSearch, handleDetail } from './handlers/resources';
 import { handleAiMessage } from './handlers/ai';
+import { sendChatAction } from './client';
 
 // Main Command Processor
 export async function processTelegramCommand(env: Env, message: TelegramMessage) {
@@ -37,6 +38,7 @@ export async function processTelegramCommand(env: Env, message: TelegramMessage)
 
     // 2.5 Non-command messages go to AI assistant
     if (!fullText.startsWith('/')) {
+      await sendChatAction(env.TELEGRAM_BOT_TOKEN!, chatId, 'typing');
       await handleAiMessage(env, chatId, fullText);
       return;
     }
@@ -52,33 +54,43 @@ export async function processTelegramCommand(env: Env, message: TelegramMessage)
     // 4. Dispatch
     switch (command) {
       case '/ai':
+        await sendChatAction(env.TELEGRAM_BOT_TOKEN!, chatId, 'typing');
         await handleAiMessage(env, chatId, fullText, { source: 'command' });
         break;
       case '/status':
+        await sendChatAction(env.TELEGRAM_BOT_TOKEN!, chatId, 'typing');
         await handleStatus(env, chatId, resources);
         break;
       case '/expiring':
+        await sendChatAction(env.TELEGRAM_BOT_TOKEN!, chatId, 'typing');
         await handleExpiring(env, chatId, resources);
         break;
       case '/list':
+        await sendChatAction(env.TELEGRAM_BOT_TOKEN!, chatId, 'typing');
         await handleList(env, chatId, resources);
         break;
       case '/vps':
+        await sendChatAction(env.TELEGRAM_BOT_TOKEN!, chatId, 'typing');
         await handleList(env, chatId, resources, 'VPS');
         break;
       case '/domains':
+        await sendChatAction(env.TELEGRAM_BOT_TOKEN!, chatId, 'typing');
         await handleList(env, chatId, resources, 'DOMAIN');
         break;
       case '/accounts':
+        await sendChatAction(env.TELEGRAM_BOT_TOKEN!, chatId, 'typing');
         await handleList(env, chatId, resources, 'ACCOUNT');
         break;
       case '/cellphones':
+        await sendChatAction(env.TELEGRAM_BOT_TOKEN!, chatId, 'typing');
         await handleList(env, chatId, resources, 'PHONE_NUMBER');
         break;
       case '/search':
+        await sendChatAction(env.TELEGRAM_BOT_TOKEN!, chatId, 'typing');
         await handleSearch(env, chatId, resources, args);
         break;
       case '/detail':
+        await sendChatAction(env.TELEGRAM_BOT_TOKEN!, chatId, 'typing');
         await handleDetail(env, chatId, resources, args);
         break;
       case '/help':

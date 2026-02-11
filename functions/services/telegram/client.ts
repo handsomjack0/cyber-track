@@ -1,5 +1,5 @@
 
-import { SendMessagePayload, TelegramApiResponse } from './types';
+import { ChatAction, EditMessageTextPayload, SendMessagePayload, TelegramApiResponse, TelegramSentMessage } from './types';
 
 const TELEGRAM_API_BASE = 'https://api.telegram.org/bot';
 
@@ -15,7 +15,7 @@ const getApiUrl = (token: string, method: string) => {
 /**
  * Send a message to a Telegram chat
  */
-export async function sendMessage(token: string, payload: SendMessagePayload): Promise<TelegramApiResponse> {
+export async function sendMessage(token: string, payload: SendMessagePayload): Promise<TelegramApiResponse<TelegramSentMessage>> {
   const url = getApiUrl(token, 'sendMessage');
   
   try {
@@ -37,6 +37,70 @@ export async function sendMessage(token: string, payload: SendMessagePayload): P
     return data;
   } catch (error) {
     console.error('Telegram API Error:', error);
+    return { ok: false, description: String(error) };
+  }
+}
+
+/**
+ * Send chat action to indicate bot is processing (e.g. typing...)
+ */
+export async function sendChatAction(
+  token: string,
+  chatId: number | string,
+  action: ChatAction = 'typing'
+): Promise<TelegramApiResponse> {
+  const url = getApiUrl(token, 'sendChatAction');
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        action
+      })
+    });
+    const data = await response.json() as TelegramApiResponse<TelegramSentMessage>;
+    if (!response.ok || !data.ok) {
+      console.error('Telegram sendChatAction failed', {
+        status: response.status,
+        description: data.description
+      });
+    }
+    return data;
+  } catch (error) {
+    console.error('Telegram sendChatAction Error:', error);
+    return { ok: false, description: String(error) };
+  }
+}
+
+/**
+ * Edit an existing Telegram message.
+ */
+export async function editMessageText(
+  token: string,
+  payload: EditMessageTextPayload
+): Promise<TelegramApiResponse<TelegramSentMessage>> {
+  const url = getApiUrl(token, 'editMessageText');
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json() as TelegramApiResponse<TelegramSentMessage>;
+    if (!response.ok || !data.ok) {
+      console.error('Telegram editMessageText failed', {
+        status: response.status,
+        description: data.description
+      });
+    }
+    return data;
+  } catch (error) {
+    console.error('Telegram editMessageText Error:', error);
     return { ok: false, description: String(error) };
   }
 }
