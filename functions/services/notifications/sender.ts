@@ -10,19 +10,28 @@ interface NotificationResult {
 
 type ChangeAction = 'created' | 'updated' | 'deleted';
 
-function formatChangeList(changes: string[]) {
-  if (changes.length === 0) return '';
-  return `\n\n变更项：\n${changes.map((item) => `- ${item}`).join('\n')}`;
-}
-
 function escapeHtml(value: string | number | null | undefined) {
   const text = String(value ?? '-');
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+    .replace(/\"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function displayValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '-';
+  return String(value);
+}
+
+function formatChangeList(changes: string[]) {
+  if (changes.length === 0) return '';
+  return `\n\n<b>变更项</b>\n${changes.map((item) => `• ${escapeHtml(item)}`).join('\n')}`;
+}
+
+function normalizeProvider(provider: string) {
+  return provider.replace(/^https?:\/\//i, '').replace(/\/$/, '');
 }
 
 export async function sendResourceNotification(
@@ -44,27 +53,31 @@ export async function sendResourceNotification(
   const useEmail = isGlobal ? settings.email.enabled : resSettings?.channels?.email;
   const useWebhook = isGlobal ? settings.webhook.enabled : resSettings?.channels?.webhook;
 
-  const safeName = escapeHtml(resource.name);
-  const safeProvider = escapeHtml(resource.provider);
-  const safeExpiryDate = escapeHtml(resource.expiryDate || '-');
-  const safeCost = `${escapeHtml(resource.currency)}${escapeHtml(resource.cost)}`;
+  const safeName = escapeHtml(displayValue(resource.name));
+  const safeProvider = escapeHtml(normalizeProvider(displayValue(resource.provider)));
+  const safeType = escapeHtml(displayValue(resource.type));
+  const safeExpiryDate = escapeHtml(displayValue(resource.expiryDate));
+  const safeCost = `${escapeHtml(displayValue(resource.currency))}${escapeHtml(displayValue(resource.cost))}`;
   const status = daysRemaining < 0 ? `已过期 ${Math.abs(daysRemaining)} 天` : `剩余 ${daysRemaining} 天`;
 
-  const message =
-    `<b>续费提醒: ${safeName}</b>\n\n` +
-    `资产: <b>${safeName}</b>\n` +
-    `服务商: <b>${safeProvider}</b>\n` +
-    `状态: <b>${escapeHtml(status)}</b>\n` +
-    `到期日: <b>${safeExpiryDate}</b>\n` +
-    `费用: <b>${safeCost}</b>\n\n` +
-    `请及时处理续费，避免服务中断。`;
+  const message = [
+    `⏰ <b>续费提醒</b>`,
+    ``,
+    `📌 资产: <b>${safeName}</b>`,
+    `🏢 服务商: <b>${safeProvider}</b>`,
+    `🧩 类型: <b>${safeType}</b>`,
+    `🗓 到期日: <b>${safeExpiryDate}</b>`,
+    `💰 费用: <b>${safeCost}</b>`,
+    `📉 状态: <b>${escapeHtml(status)}</b>`
+  ].join('\n');
 
   if (useTelegram && settings.telegram.chatId && env.TELEGRAM_BOT_TOKEN) {
     try {
       await sendMessage(env.TELEGRAM_BOT_TOKEN, {
         chat_id: settings.telegram.chatId,
         text: message,
-        parse_mode: 'HTML'
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
       });
       channelsSent.push('Telegram');
     } catch (e) {
@@ -80,19 +93,21 @@ export async function sendResourceNotification(
           <h3>续费提醒：${safeName}</h3>
           <ul>
             <li><strong>服务商：</strong>${safeProvider}</li>
-            <li><strong>状态：</strong>${escapeHtml(status)}</li>
+            <li><strong>类型：</strong>${safeType}</li>
             <li><strong>到期日：</strong>${safeExpiryDate}</li>
             <li><strong>费用：</strong>${safeCost}</li>
+            <li><strong>状态：</strong>${escapeHtml(status)}</li>
           </ul>
           <p>请及时处理续费，避免服务中断。</p>
         </div>
       `;
       const text = [
-        `续费提醒：${resource.name}`,
-        `服务商：${resource.provider}`,
+        `续费提醒：${displayValue(resource.name)}`,
+        `服务商：${normalizeProvider(displayValue(resource.provider))}`,
+        `类型：${displayValue(resource.type)}`,
+        `到期日：${displayValue(resource.expiryDate)}`,
+        `费用：${displayValue(resource.currency)}${displayValue(resource.cost)}`,
         `状态：${status}`,
-        `到期日：${resource.expiryDate || '-'}`,
-        `费用：${resource.currency}${resource.cost}`,
         '请及时处理续费，避免服务中断。'
       ].join('\n');
 
@@ -151,27 +166,34 @@ export async function sendResourceChangeNotification(
   const useEmail = isGlobal ? settings.email.enabled : resSettings?.channels?.email;
   const useWebhook = isGlobal ? settings.webhook.enabled : resSettings?.channels?.webhook;
 
-  const actionLabel = action === 'created' ? '新增' : action === 'updated' ? '更新' : '删除';
+  const actionMeta: Record<ChangeAction, { icon: string; label: string }> = {
+    created: { icon: '🧩', label: '资源新增' },
+    updated: { icon: '♻️', label: '资源更新' },
+    deleted: { icon: '🗑️', label: '资源删除' }
+  };
 
-  const safeName = escapeHtml(resource.name);
-  const safeProvider = escapeHtml(resource.provider);
-  const safeType = escapeHtml(resource.type);
-  const safeExpiryDate = escapeHtml(resource.expiryDate || '-');
+  const meta = actionMeta[action];
+  const safeName = escapeHtml(displayValue(resource.name));
+  const safeProvider = escapeHtml(normalizeProvider(displayValue(resource.provider)));
+  const safeType = escapeHtml(displayValue(resource.type));
+  const safeExpiryDate = escapeHtml(displayValue(resource.expiryDate));
 
-  const message =
-    `<b>资源${actionLabel}</b>\n\n` +
-    `资产: <b>${safeName}</b>\n` +
-    `服务商: <b>${safeProvider}</b>\n` +
-    `类型: <b>${safeType}</b>\n` +
-    `到期日: <b>${safeExpiryDate}</b>` +
-    formatChangeList(changes);
+  const message = [
+    `${meta.icon} <b>${meta.label}</b>`,
+    ``,
+    `📌 资产: <b>${safeName}</b>`,
+    `🏢 服务商: <b>${safeProvider}</b>`,
+    `🧩 类型: <b>${safeType}</b>`,
+    `🗓 到期日: <b>${safeExpiryDate}</b>${formatChangeList(changes)}`
+  ].join('\n');
 
   if (useTelegram && settings.telegram.chatId && env.TELEGRAM_BOT_TOKEN) {
     try {
       await sendMessage(env.TELEGRAM_BOT_TOKEN, {
         chat_id: settings.telegram.chatId,
         text: message,
-        parse_mode: 'HTML'
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
       });
       channelsSent.push('Telegram');
     } catch (e) {
@@ -181,25 +203,25 @@ export async function sendResourceChangeNotification(
 
   if (useEmail && settings.email.email && env.RESEND_API_KEY && env.RESEND_FROM) {
     try {
-      const subject = `cyberTrack 资源${actionLabel}：${resource.name}`;
+      const subject = `cyberTrack ${meta.label}：${resource.name}`;
       const html = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <h3>资源${actionLabel}：${safeName}</h3>
+          <h3>${meta.label}：${safeName}</h3>
           <ul>
             <li><strong>服务商：</strong>${safeProvider}</li>
             <li><strong>类型：</strong>${safeType}</li>
             <li><strong>到期日：</strong>${safeExpiryDate}</li>
           </ul>
-          ${changes.length ? `<p><strong>变更项：</strong><br/>${changes.map((c) => `- ${escapeHtml(c)}`).join('<br/>')}</p>` : ''}
+          ${changes.length ? `<p><strong>变更项：</strong><br/>${changes.map((c) => `• ${escapeHtml(c)}`).join('<br/>')}</p>` : ''}
         </div>
       `;
       const text = [
-        `资源${actionLabel}：${resource.name}`,
-        `服务商：${resource.provider}`,
-        `类型：${resource.type}`,
-        `到期日：${resource.expiryDate || '-'}`
+        `${meta.label}：${displayValue(resource.name)}`,
+        `服务商：${normalizeProvider(displayValue(resource.provider))}`,
+        `类型：${displayValue(resource.type)}`,
+        `到期日：${displayValue(resource.expiryDate)}`
       ]
-        .concat(changes.length ? ['变更项：', ...changes.map((c) => `- ${c}`)] : [])
+        .concat(changes.length ? ['变更项：', ...changes.map((c) => `• ${c}`)] : [])
         .join('\n');
 
       await sendEmailResend(env.RESEND_API_KEY, env.RESEND_FROM, {

@@ -1,4 +1,3 @@
-
 export interface TelegramChat {
   id: number;
   type: string;
@@ -29,6 +28,7 @@ export interface SendMessagePayload {
   text: string;
   parse_mode?: 'HTML' | 'MarkdownV2';
   reply_to_message_id?: number;
+  disable_web_page_preview?: boolean;
 }
 
 export interface TelegramApiResponse<T = any> {

@@ -12,6 +12,12 @@ const normalizeCost = (input: unknown): number => {
 
 const formatCost = (input: unknown): string => normalizeCost(input).toFixed(2);
 
+const displayValue = (value: unknown): string => {
+  if (value === null || value === undefined || value === '') return '-';
+  if (typeof value === 'boolean') return value ? '是' : '否';
+  return String(value);
+};
+
 const buildChanges = (prev: any, next: any) => {
   const fields: Array<{ key: string; label: string }> = [
     { key: 'name', label: '名称' },
@@ -39,12 +45,14 @@ const buildChanges = (prev: any, next: any) => {
     }
 
     if (prev[field.key] !== next[field.key]) {
-      changes.push(`${field.label}: ${String(prev[field.key])} → ${String(next[field.key])}`);
+      changes.push(`${field.label}: ${displayValue(prev[field.key])} → ${displayValue(next[field.key])}`);
     }
   }
 
   if (prev?.tags && next?.tags && JSON.stringify(prev.tags) !== JSON.stringify(next.tags)) {
-    changes.push(`标签: ${prev.tags.join(', ') || '-'} → ${next.tags.join(', ') || '-'}`);
+    const prevTags = Array.isArray(prev.tags) ? prev.tags.join(', ') : '';
+    const nextTags = Array.isArray(next.tags) ? next.tags.join(', ') : '';
+    changes.push(`标签: ${prevTags || '-'} → ${nextTags || '-'}`);
   }
 
   return changes;
