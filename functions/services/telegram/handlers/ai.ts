@@ -1,10 +1,7 @@
-import { GoogleGenAI } from '@google/genai';
 import { Env, getResources, Resource } from '../../../utils/storage';
 import { editMessageText, sendChatAction, sendMessage } from '../client';
-import { AiProvider, getAiRuntimeSettings, pickFirstAvailableProvider } from '../../../services/ai/config';
-import { callOpenAICompatible, withTimeout } from '../../../services/ai/client';
-
-const AI_PROVIDERS: AiProvider[] = ['openai', 'deepseek', 'openrouter', 'github', 'custom', 'gemini'];
+import { AiProvider, getDefaultProvider } from '../../../services/ai/config';
+import { runAiWithFallback } from '../../../services/ai/fallback';
 
 const toCompactResources = (resources: Resource[]) =>
   resources.slice(0, 80).map((r) => ({
@@ -43,15 +40,11 @@ const hasCustomConfig = (env: Env) =>
   Boolean(env.CUSTOM_AI_ENDPOINT?.trim()) ||
   Boolean(env.CUSTOM_AI_BASE_URL?.trim());
 
-const getPreferredOrder = (env: Env) => {
+const getPreferredProvider = (env: Env): AiProvider => {
   const defaultProvider = env.AI_DEFAULT_PROVIDER as AiProvider | undefined;
-  if (defaultProvider) {
-    return [defaultProvider, ...AI_PROVIDERS.filter((p) => p !== defaultProvider)] as AiProvider[];
-  }
-  if (hasCustomConfig(env)) {
-    return ['custom', ...AI_PROVIDERS.filter((p) => p !== 'custom')] as AiProvider[];
-  }
-  return AI_PROVIDERS;
+  if (defaultProvider) return defaultProvider;
+  if (hasCustomConfig(env)) return 'custom';
+  return getDefaultProvider(env);
 };
 
 function parseAiCommand(text: string) {
@@ -137,16 +130,7 @@ export async function handleAiMessage(
       return;
     }
 
-    const picked = pickFirstAvailableProvider(env, getPreferredOrder(env));
     const question = parsed.question?.trim();
-
-    if (!picked) {
-      await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
-        chat_id: chatId,
-        text: 'AI 未配置。请在环境变量中设置可用的 API Key 或自建通道配置。'
-      });
-      return;
-    }
 
     if (options.source === 'command' && !question) {
       await sendMessage(env.TELEGRAM_BOT_TOKEN!, {
@@ -165,72 +149,14 @@ export async function handleAiMessage(
 
     const resources = await getResources(env);
     const prompt = buildPrompt(resources, question || '');
-    const runtime = getAiRuntimeSettings(env, { maxTokens: 500 });
-    let reply = '';
+    const result = await runAiWithFallback({
+      env,
+      prompt,
+      preferredProvider: getPreferredProvider(env),
+      maxTokens: 500
+    });
 
-    if (picked.kind === 'gemini') {
-      const ai = new GoogleGenAI({ apiKey: picked.apiKey! });
-      const response = (await withTimeout(
-        ai.models.generateContent({
-          model: picked.model,
-          contents: prompt
-        }),
-        runtime.timeoutMs
-      )) as Awaited<ReturnType<typeof ai.models.generateContent>>;
-      reply = response.text || '';
-    } else {
-      const runWithModel = (model: string) =>
-        callOpenAICompatible({
-          url: picked.url!,
-          apiKey: picked.apiKey,
-          model,
-          prompt,
-          extraHeaders: picked.extraHeaders,
-          mode: picked.mode,
-          timeoutMs: runtime.timeoutMs,
-          retries: runtime.retries,
-          retryDelayMs: runtime.retryDelayMs,
-          temperature: runtime.temperature,
-          maxTokens: runtime.maxTokens
-        });
-
-      try {
-        reply = await runWithModel(picked.model);
-      } catch (e) {
-        const message = e instanceof Error ? e.message : String(e);
-        const lower = message.toLowerCase();
-        const needsModelFallback =
-          picked.provider === 'custom' &&
-          (lower.includes('model_not_found') ||
-            lower.includes('model not found') ||
-            lower.includes('no available distributor') ||
-            lower.includes('distributor'));
-
-        if (!needsModelFallback) throw e;
-
-        const fallbackModels = [
-          env.AI_CUSTOM_MODEL,
-          env.AI_DEFAULT_MODEL,
-          'deepseek-chat',
-          'DeepSeek-V3.1-cb',
-          'deepseek-reasoner'
-        ].filter((v, i, arr): v is string => Boolean(v && arr.indexOf(v) === i));
-
-        let success = false;
-        for (const fallbackModel of fallbackModels) {
-          try {
-            reply = await runWithModel(fallbackModel);
-            success = true;
-            break;
-          } catch {
-            // continue
-          }
-        }
-        if (!success) throw e;
-      }
-    }
-
-    const safeReply = reply?.trim();
+    const safeReply = result.text?.trim();
     if (!safeReply) {
       await sendOrEdit('AI 返回为空，请检查模型名或接口路径是否正确（chat/completions vs completions）。');
       return;

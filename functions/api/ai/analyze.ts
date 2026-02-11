@@ -1,12 +1,6 @@
-﻿import { GoogleGenAI } from '@google/genai';
 import { Env, jsonResponse, errorResponse, checkAuth, Resource } from '../../utils/storage';
-import {
-  AiProvider,
-  getAiRuntimeSettings,
-  getDefaultProvider,
-  resolveProvider
-} from '../../services/ai/config';
-import { callOpenAICompatible, withTimeout } from '../../services/ai/client';
+import { AiProvider, getDefaultProvider } from '../../services/ai/config';
+import { runAiWithFallback } from '../../services/ai/fallback';
 
 interface AnalyzeRequest {
   resources: Resource[];
@@ -68,55 +62,26 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
   let provider: AiProvider = getDefaultProvider(env);
   let model = '';
 
-  // 1. Auth Check
   if (!checkAuth(request, env)) {
     return errorResponse('Unauthorized', 401);
   }
 
   try {
-    const body = await request.json() as AnalyzeRequest;
+    const body = (await request.json()) as AnalyzeRequest;
     const resources = body.resources || [];
     provider = body.provider || getDefaultProvider(env);
 
     const prompt = buildPrompt(resources);
-    const runtime = getAiRuntimeSettings(env);
-    const resolved = resolveProvider(env, provider, { model: body.model, customId: body.customId });
-
-    if (!resolved.config) {
-      const error = resolved.error || { code: 'UNSUPPORTED_PROVIDER', message: 'Unsupported provider.' };
-      const status = error.code === 'UNSUPPORTED_PROVIDER' || error.code === 'CUSTOM_ENDPOINT_NOT_FOUND' ? 400 : 500;
-      return errorWithCode(error.message, error.code, status, provider, model, requestId);
-    }
-
-    model = resolved.config.model;
-
-    if (resolved.config.kind === 'gemini') {
-      const ai = new GoogleGenAI({ apiKey: resolved.config.apiKey! });
-      const response = await withTimeout(
-        ai.models.generateContent({
-          model,
-          contents: prompt
-        }),
-        runtime.timeoutMs
-      ) as Awaited<ReturnType<typeof ai.models.generateContent>>;
-
-      return jsonResponse({ success: true, analysis: response.text });
-    }
-
-    const analysis = await callOpenAICompatible({
-      url: resolved.config.url!,
-      apiKey: resolved.config.apiKey,
-      model,
+    const result = await runAiWithFallback({
+      env,
       prompt,
-      extraHeaders: resolved.config.extraHeaders,
-      mode: resolved.config.mode,
-      timeoutMs: runtime.timeoutMs,
-      retries: runtime.retries,
-      retryDelayMs: runtime.retryDelayMs,
-      temperature: runtime.temperature,
-      maxTokens: runtime.maxTokens
+      preferredProvider: provider,
+      preferredModel: body.model,
+      customId: body.customId
     });
-    return jsonResponse({ success: true, analysis });
+
+    model = result.model;
+    return jsonResponse({ success: true, analysis: result.text, provider: result.provider, model: result.model });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('AI Backend Error:', message);

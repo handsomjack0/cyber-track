@@ -6,6 +6,7 @@ export type AiMode = 'chat' | 'completion';
 export type ProviderConfig = {
   provider: AiProvider;
   model: string;
+  modelFallbacks?: string[];
   kind: 'openai-compatible' | 'gemini';
   apiKey?: string;
   url?: string;
@@ -33,7 +34,7 @@ type CustomEndpoint = {
   defaultModel?: string;
 };
 
-const DEFAULT_MODELS: Record<AiProvider, string> = {
+export const DEFAULT_MODELS: Record<AiProvider, string> = {
   openai: 'gpt-4o-mini',
   deepseek: 'deepseek-chat',
   openrouter: 'openai/gpt-4o-mini',
@@ -56,7 +57,7 @@ const PROVIDER_ERRORS: Record<AiProvider, { code: string; message: string }> = {
   deepseek: { code: 'MISSING_DEEPSEEK_KEY', message: 'DeepSeek API Key 未配置' },
   openrouter: { code: 'MISSING_OPENROUTER_KEY', message: 'OpenRouter API Key 未配置' },
   github: { code: 'MISSING_GITHUB_MODELS', message: 'GitHub Models 配置不完整' },
-  custom: { code: 'MISSING_CUSTOM_BASE', message: '自建公益站地址未配置' },
+  custom: { code: 'MISSING_CUSTOM_BASE', message: '自建通道地址未配置' },
   gemini: { code: 'MISSING_GEMINI_KEY', message: 'Gemini API Key 未配置' }
 };
 
@@ -74,14 +75,32 @@ const parseNumber = (value: string | undefined, fallback: number) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const unique = (items: Array<string | undefined>) => {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const item of items) {
+    const value = item?.trim();
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
+};
+
+const parseModelList = (value?: string) =>
+  (value || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
 export const parseCustomEndpoints = (raw?: string): CustomEndpoint[] => {
   if (!raw) return [];
   return raw
     .split(/\r?\n/)
-    .map(line => line.trim())
+    .map((line) => line.trim())
     .filter(Boolean)
-    .map(line => {
-      const [id, url, key, defaultModel] = line.split('|').map(s => s?.trim());
+    .map((line) => {
+      const [id, url, key, defaultModel] = line.split('|').map((s) => s?.trim());
       if (!id || !url) return null;
       return { id, url, key, defaultModel };
     })
@@ -110,9 +129,10 @@ const resolveModel = (
   requested?: string,
   endpointDefault?: string
 ) => {
+  const endpointModels = parseModelList(endpointDefault);
   const modelEnvKey = MODEL_ENV_BY_PROVIDER[provider];
   const providerModel = (env as Record<string, string | undefined>)[modelEnvKey];
-  return requested || providerModel || env.AI_DEFAULT_MODEL || endpointDefault || DEFAULT_MODELS[provider];
+  return requested || endpointModels[0] || providerModel || env.AI_DEFAULT_MODEL || DEFAULT_MODELS[provider];
 };
 
 export const resolveProvider = (
@@ -173,18 +193,18 @@ export const resolveProvider = (
     case 'custom': {
       const endpoints = parseCustomEndpoints(env.CUSTOM_AI_ENDPOINTS);
       if (endpoints.length > 0) {
-        const selected = options?.customId
-          ? endpoints.find(e => e.id === options.customId)
-          : endpoints[0];
+        const selected = options?.customId ? endpoints.find((e) => e.id === options.customId) : endpoints[0];
         if (!selected) {
-          return { error: { code: 'CUSTOM_ENDPOINT_NOT_FOUND', message: '自建公益站标识不存在' } };
+          return { error: { code: 'CUSTOM_ENDPOINT_NOT_FOUND', message: '自建站标识不存在' } };
         }
         const mode: AiMode = /\/chat\/completions$/i.test(selected.url) ? 'chat' : 'completion';
+        const endpointModels = parseModelList(selected.defaultModel);
         return {
           config: {
             provider,
             kind: 'openai-compatible',
             model: resolveModel(env, provider, options?.model, selected.defaultModel),
+            modelFallbacks: unique([options?.model, ...endpointModels, env.AI_CUSTOM_MODEL, env.AI_DEFAULT_MODEL]),
             apiKey: selected.key || env.CUSTOM_AI_API_KEY,
             url: selected.url,
             mode
@@ -212,6 +232,7 @@ export const resolveProvider = (
           provider,
           kind: 'openai-compatible',
           model: resolveModel(env, provider, options?.model),
+          modelFallbacks: unique([options?.model, env.AI_CUSTOM_MODEL, env.AI_DEFAULT_MODEL]),
           apiKey: env.CUSTOM_AI_API_KEY,
           url,
           mode
@@ -233,13 +254,8 @@ export const resolveProvider = (
   }
 };
 
-export const pickFirstAvailableProvider = (
-  env: Env,
-  preferred?: AiProvider[]
-): ProviderConfig | null => {
-  const order = preferred?.length
-    ? preferred
-    : (['openai', 'deepseek', 'openrouter', 'github', 'custom', 'gemini'] as AiProvider[]);
+export const pickFirstAvailableProvider = (env: Env, preferred?: AiProvider[]): ProviderConfig | null => {
+  const order = preferred?.length ? preferred : (['openai', 'deepseek', 'openrouter', 'github', 'custom', 'gemini'] as AiProvider[]);
   for (const provider of order) {
     const resolved = resolveProvider(env, provider);
     if (resolved.config) return resolved.config;
@@ -247,5 +263,70 @@ export const pickFirstAvailableProvider = (
   return null;
 };
 
-export const getDefaultProvider = (env: Env) =>
-  (env.AI_DEFAULT_PROVIDER as AiProvider | undefined) || 'openai';
+export const getDefaultProvider = (env: Env) => (env.AI_DEFAULT_PROVIDER as AiProvider | undefined) || 'openai';
+
+export const getProviderModelFallbacks = (
+  provider: AiProvider,
+  env: Env,
+  preferredModel?: string,
+  candidateModels?: string[]
+) => {
+  const common = [preferredModel, ...(candidateModels || []), env.AI_DEFAULT_MODEL];
+  switch (provider) {
+    case 'deepseek':
+      return unique([...common, env.AI_DEEPSEEK_MODEL, 'deepseek-chat', 'deepseek-reasoner']);
+    case 'openai':
+      return unique([...common, env.AI_OPENAI_MODEL, 'gpt-4o-mini']);
+    case 'openrouter':
+      return unique([...common, env.AI_OPENROUTER_MODEL, 'openai/gpt-4o-mini', 'deepseek/deepseek-chat']);
+    case 'github':
+      return unique([...common, env.AI_GITHUB_MODEL, 'gpt-4o-mini']);
+    case 'gemini':
+      return unique([...common, env.AI_GEMINI_MODEL, 'gemini-1.5-flash']);
+    case 'custom':
+      return unique([
+        preferredModel,
+        ...(candidateModels || []),
+        env.AI_CUSTOM_MODEL,
+        env.AI_DEFAULT_MODEL,
+        'deepseek-chat',
+        'DeepSeek-V3.1',
+        'Qwen3-32B',
+        'zai-glm-4.7'
+      ]);
+    default:
+      return unique([...common]);
+  }
+};
+
+export const resolveProviderCandidates = (
+  env: Env,
+  preferred: AiProvider[],
+  options?: { model?: string; customId?: string }
+) => {
+  const candidates: ProviderConfig[] = [];
+  const pushIfConfig = (resolved: ProviderResolution) => {
+    if (resolved.config) candidates.push(resolved.config);
+  };
+
+  for (const provider of preferred) {
+    if (provider === 'custom' && !options?.customId) {
+      const endpoints = parseCustomEndpoints(env.CUSTOM_AI_ENDPOINTS);
+      if (endpoints.length > 0) {
+        for (const ep of endpoints) {
+          pushIfConfig(resolveProvider(env, 'custom', { model: options?.model, customId: ep.id }));
+        }
+        continue;
+      }
+    }
+    pushIfConfig(resolveProvider(env, provider, options));
+  }
+
+  const dedup = new Set<string>();
+  return candidates.filter((c) => {
+    const key = `${c.provider}|${c.url || 'gemini'}|${c.model}`;
+    if (dedup.has(key)) return false;
+    dedup.add(key);
+    return true;
+  });
+};
