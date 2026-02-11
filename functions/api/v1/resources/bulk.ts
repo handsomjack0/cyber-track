@@ -4,6 +4,13 @@ import { resources } from '../../../db/schema';
 import { sql } from 'drizzle-orm';
 import { sendResourceChangeNotification } from '../../../services/notifications/sender';
 
+const normalizeCost = (input: unknown): number => {
+  const parsed = Number(input);
+  if (!Number.isFinite(parsed)) return 0;
+  const rounded = Math.round(parsed * 100) / 100;
+  return Math.abs(rounded) < 0.005 ? 0 : rounded;
+};
+
 export const onRequestPost = async (context: { env: Env, request: Request }) => {
   if (!checkAuth(context.request, context.env)) {
     return errorResponse('Unauthorized', 401);
@@ -37,7 +44,7 @@ export const onRequestPost = async (context: { env: Env, request: Request }) => 
         provider: r.provider ? String(r.provider) : 'Unknown',
         expiryDate: r.expiryDate || null,
         startDate: r.startDate || null,
-        cost: Number(r.cost || 0),
+        cost: normalizeCost(r.cost),
         currency: r.currency ? String(r.currency) : '$',
         type: String(r.type),
         billingCycle: r.billingCycle || null,

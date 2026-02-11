@@ -1,8 +1,16 @@
-
 import { Env, getDb, jsonResponse, errorResponse, checkAuth, getSettings } from '../../../utils/storage';
 import { resources } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
 import { sendResourceChangeNotification } from '../../../services/notifications/sender';
+
+const normalizeCost = (input: unknown): number => {
+  const parsed = Number(input);
+  if (!Number.isFinite(parsed)) return 0;
+  const rounded = Math.round(parsed * 100) / 100;
+  return Math.abs(rounded) < 0.005 ? 0 : rounded;
+};
+
+const formatCost = (input: unknown): string => normalizeCost(input).toFixed(2);
 
 const buildChanges = (prev: any, next: any) => {
   const fields: Array<{ key: string; label: string }> = [
@@ -19,7 +27,18 @@ const buildChanges = (prev: any, next: any) => {
 
   const changes: string[] = [];
   for (const field of fields) {
-    if (prev?.[field.key] !== undefined && next?.[field.key] !== undefined && prev[field.key] !== next[field.key]) {
+    if (prev?.[field.key] === undefined || next?.[field.key] === undefined) continue;
+
+    if (field.key === 'cost') {
+      const prevCost = normalizeCost(prev[field.key]);
+      const nextCost = normalizeCost(next[field.key]);
+      if (prevCost !== nextCost) {
+        changes.push(`${field.label}: ${formatCost(prevCost)} → ${formatCost(nextCost)}`);
+      }
+      continue;
+    }
+
+    if (prev[field.key] !== next[field.key]) {
       changes.push(`${field.label}: ${String(prev[field.key])} → ${String(next[field.key])}`);
     }
   }
@@ -31,12 +50,12 @@ const buildChanges = (prev: any, next: any) => {
   return changes;
 };
 
-export const onRequestGet = async (context: { env: Env, request: Request, params: { id: string } }) => {
+export const onRequestGet = async (context: { env: Env; request: Request; params: { id: string } }) => {
   if (!checkAuth(context.request, context.env)) return errorResponse('Unauthorized', 401);
 
   const id = context.params.id;
   const db = getDb(context.env);
-  
+
   const result = await db.select().from(resources).where(eq(resources.id, id)).get();
 
   if (!result) return errorResponse('Resource not found', 404);
@@ -44,24 +63,22 @@ export const onRequestGet = async (context: { env: Env, request: Request, params
   return jsonResponse({ success: true, data: result });
 };
 
-export const onRequestPut = async (context: { env: Env, request: Request, params: { id: string } }) => {
+export const onRequestPut = async (context: { env: Env; request: Request; params: { id: string } }) => {
   if (!checkAuth(context.request, context.env)) return errorResponse('Unauthorized', 401);
 
   const id = context.params.id;
-  
+
   try {
-    const body = await context.request.json() as any;
+    const body = (await context.request.json()) as any;
     const db = getDb(context.env);
     const previous = await db.select().from(resources).where(eq(resources.id, id)).get();
 
-    // Update only fields that are passed, but ensure ID is preserved
-    // Drizzle's update().set() handles partial updates well
     const updateData = {
       name: body.name,
       provider: body.provider,
       expiryDate: body.expiryDate,
       startDate: body.startDate,
-      cost: body.cost,
+      cost: body.cost === undefined ? undefined : normalizeCost(body.cost),
       currency: body.currency,
       type: body.type,
       billingCycle: body.billingCycle,
@@ -71,10 +88,10 @@ export const onRequestPut = async (context: { env: Env, request: Request, params
       tags: body.tags
     };
 
-    // Remove undefined keys so we don't overwrite with null unless intended
-    Object.keys(updateData).forEach(key => (updateData as any)[key] === undefined && delete (updateData as any)[key]);
+    Object.keys(updateData).forEach((key) => (updateData as any)[key] === undefined && delete (updateData as any)[key]);
 
-    const result = await db.update(resources)
+    const result = await db
+      .update(resources)
       .set(updateData)
       .where(eq(resources.id, id))
       .returning()
@@ -96,7 +113,7 @@ export const onRequestPut = async (context: { env: Env, request: Request, params
   }
 };
 
-export const onRequestDelete = async (context: { env: Env, request: Request, params: { id: string } }) => {
+export const onRequestDelete = async (context: { env: Env; request: Request; params: { id: string } }) => {
   if (!checkAuth(context.request, context.env)) return errorResponse('Unauthorized', 401);
 
   const id = context.params.id;
@@ -104,7 +121,7 @@ export const onRequestDelete = async (context: { env: Env, request: Request, par
 
   try {
     const result = await db.delete(resources).where(eq(resources.id, id)).returning().get();
-    
+
     if (!result) {
       return errorResponse('Resource not found', 404);
     }

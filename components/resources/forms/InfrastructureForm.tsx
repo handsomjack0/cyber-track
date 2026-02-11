@@ -153,6 +153,7 @@ const InfrastructureForm: React.FC<InfrastructureFormProps> = ({ initialData, on
             <input
               required
               type="number"
+              min="0"
               step="0.01"
               className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400/40 text-sm transition-shadow"
               value={formData.cost}
