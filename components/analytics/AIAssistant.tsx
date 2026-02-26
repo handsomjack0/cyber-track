@@ -33,7 +33,7 @@ const PROVIDER_MODELS: Record<AiProvider, { label: string; value: string }[]> = 
     { label: 'mistral-small', value: 'mistral-small' }
   ],
   custom: [
-    { label: '自定义模型', value: '' }
+    { label: '自定义模�?, value: '' }
   ],
   gemini: [
     { label: 'gemini-1.5-flash', value: 'gemini-1.5-flash' },
@@ -239,9 +239,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
       const cached = readCache();
       if (cached?.analysis) {
         setAnalysis(cached.analysis);
-        setCacheNote('已显示上次缓存结果（当前请求失败）。');
+        setCacheNote('已显示上次缓存结果（当前请求失败）�?);
       } else {
-        setAnalysis('无法生成分析报告，请稍后再试。');
+        setAnalysis('无法生成分析报告，请稍后再试�?);
       }
     } finally {
       setLoading(false);
@@ -270,8 +270,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
               </span>
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm max-w-lg leading-relaxed">
-              深度分析你的 {resources.length} 个资源，提供成本优化建议、到期风险提醒与整合策略。未配置的 AI 平台不会影响其他功能。
-            </p>
+              深度分析你的 {resources.length} 个资源，提供成本优化建议、到期风险提醒与整合策略。未配置�?AI 平台不会影响其他功能�?            </p>
             {cacheNote && (
               <p className="text-xs text-slate-400 mt-1">{cacheNote}</p>
             )}
@@ -289,12 +288,31 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
               <option value="deepseek">DeepSeek</option>
               <option value="github">GitHub Models</option>
               <option value="openrouter">OpenRouter</option>
-              <option value="custom">自建公益站</option>
+              <option value="custom">自建公益�?/option>
               <option value="gemini">Gemini</option>
             </select>
+            {provider === 'custom' && customModels.length > 0 && (
+              <select
+                value={customModels.includes(model) ? model : ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!value) return;
+                  setModelByProvider(prev => ({
+                    ...prev,
+                    [provider]: value
+                  }));
+                }}
+                className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[220px]"
+              >
+                <option value="">Select model</option>
+                {customModels.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            )}
             <div className="relative">
               <input
-                {...(modelOptions.length ? { list: modelListId } : {})}
+                {...(provider !== 'custom' && modelOptions.length ? { list: modelListId } : {})}
                 value={model}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -303,10 +321,10 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
                     [provider]: value
                   }));
                 }}
-                placeholder="输入模型名"
-                className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[200px]"
+                placeholder={provider === 'custom' ? 'Type model name (manual)' : 'Input model name'}
+                className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[220px]"
               />
-              {modelOptions.length > 0 && (
+              {provider !== 'custom' && modelOptions.length > 0 && (
                 <datalist id={modelListId}>
                   {modelOptions.map((item) => (
                     <option key={item.value} value={item.value}>{item.label}</option>
@@ -318,7 +336,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
               <input
                 value={customId}
                 onChange={(e) => setCustomId(e.target.value)}
-                placeholder="公益站标识（可选，如 daiju）"
+                placeholder="公益站标识（可选，�?daiju�?
                 className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[240px]"
               />
             )}
@@ -326,12 +344,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
           {provider === 'custom' && (
             <div className="text-xs text-slate-400">
               {customModelsLoading
-                ? '????????...'
+                ? 'Loading model list...'
                 : customModelsError
-                  ? `?????????${customModelsError}`
+                  ? `Model list error: ${customModelsError}`
                   : customModels.length
-                    ? `??? ${customModels.length} ???`
-                    : '?????????'}
+                    ? `Loaded ${customModels.length} models`
+                    : 'No model list available; manual input is enabled.'}
             </div>
           )}
 
@@ -348,12 +366,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
             {loading ? (
               <>
                 <RefreshCw size={18} className="animate-spin" />
-                <span>分析中...</span>
+                <span>分析�?..</span>
               </>
             ) : (
               <>
                 <Bot size={18} className={resources.length > 0 ? 'text-sky-200' : ''} />
-                <span>{analysis ? '重新生成报告' : '开始分析'}</span>
+                <span>{analysis ? '重新生成报告' : '开始分�?}</span>
                 <ChevronRight size={16} className="opacity-50 group-hover:translate-x-1 transition-transform" />
               </>
             )}
@@ -385,8 +403,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
             </div>
             <p className="text-slate-500 dark:text-slate-400 font-medium">暂无分析报告</p>
             <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">
-              点击上方按钮，获得 AI 驱动的优化建议。
-            </p>
+              点击上方按钮，获�?AI 驱动的优化建议�?            </p>
           </div>
         )}
 
@@ -420,3 +437,4 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
 };
 
 export default AIAssistant;
+
