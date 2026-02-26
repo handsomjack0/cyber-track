@@ -17,12 +17,20 @@ const safeJson = async (response: Response): Promise<any> => {
   }
 };
 
-const buildModelsUrl = (endpointUrl: string) => {
+const buildModelsCandidates = (endpointUrl: string) => {
   const trimmed = endpointUrl.replace(/\/$/, '');
   const match = trimmed.match(/(.*)\/(?:chat\/completions|completions)$/i);
   const base = match ? match[1] : trimmed;
-  if (base.endsWith('/models')) return base;
-  return `${base}/models`;
+  const primary = base.endsWith('/models') ? base : `${base}/models`;
+  const candidates = [primary];
+
+  if (primary.includes('/v1/models')) {
+    candidates.push(primary.replace('/v1/models', '/models'));
+  } else if (primary.endsWith('/models')) {
+    candidates.push(primary.replace(/\/models$/, '/v1/models'));
+  }
+
+  return Array.from(new Set(candidates));
 };
 
 const normalizeModels = (payload: any): string[] => {
@@ -105,7 +113,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     return errorResponse('Custom endpoint URL not configured', 400);
   }
 
-  const modelsUrl = buildModelsUrl(endpointUrl);
+  const modelsCandidates = buildModelsCandidates(endpointUrl);
   const headers: Record<string, string> = {
     Accept: 'application/json'
   };
@@ -121,25 +129,39 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
   const timeout = setTimeout(() => controller.abort(), 8000);
 
   try {
-    const response = await fetch(modelsUrl, {
-      method: 'GET',
-      headers,
-      signal: controller.signal
-    });
-    const payload = await safeJson(response);
+    let lastError: { status: number; message: string } | null = null;
 
-    if (!response.ok) {
-      const upstreamMessage =
-        payload?.error?.message ||
-        payload?.message ||
-        `${response.status} ${response.statusText}`;
-      return errorResponse(`Upstream error: ${upstreamMessage}`, response.status);
+    for (const modelsUrl of modelsCandidates) {
+      const response = await fetch(modelsUrl, {
+        method: 'GET',
+        headers,
+        signal: controller.signal
+      });
+      const payload = await safeJson(response);
+
+      if (!response.ok) {
+        const upstreamMessage =
+          payload?.error?.message ||
+          payload?.message ||
+          `${response.status} ${response.statusText}`;
+        lastError = { status: response.status, message: upstreamMessage };
+        if (response.status === 404 || response.status === 405) {
+          continue;
+        }
+        return errorResponse(`Upstream error: ${upstreamMessage}`, response.status);
+      }
+
+      const models = normalizeModels(payload);
+      await writeCache(env, cacheKey, models);
+
+      return jsonResponse({ success: true, provider, customId, models, cached: false });
     }
 
-    const models = normalizeModels(payload);
-    await writeCache(env, cacheKey, models);
+    if (lastError) {
+      return errorResponse(`Upstream error: ${lastError.message}`, lastError.status);
+    }
 
-    return jsonResponse({ success: true, provider, customId, models, cached: false });
+    return errorResponse('No available models endpoint', 502);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return errorResponse(`Failed to fetch models: ${message}`, 502);

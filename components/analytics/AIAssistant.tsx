@@ -326,12 +326,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
           {provider === 'custom' && (
             <div className="text-xs text-slate-400">
               {customModelsLoading
-                ? 'Loading model list...'
+                ? '????????...'
                 : customModelsError
-                  ? 'Failed to load model list; you can type manually.'
+                  ? `?????????${customModelsError}`
                   : customModels.length
-                    ? `Loaded ${customModels.length} models`
-                    : 'Type a model name manually.'}
+                    ? `??? ${customModels.length} ???`
+                    : '?????????'}
             </div>
           )}
 
