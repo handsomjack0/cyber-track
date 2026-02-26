@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Resource } from '../../types';
-import { analyzePortfolio, AiProvider } from '../../services/geminiService';
+import { analyzePortfolio, AiProvider, fetchCustomModels } from '../../services/geminiService';
 import { Sparkles, Bot, RefreshCw, ChevronRight, FileText, BarChart3 } from 'lucide-react';
 
 interface AIAssistantProps {
@@ -10,6 +10,7 @@ interface AIAssistantProps {
 }
 
 const AI_SETTINGS_KEY = 'cloudtrack_ai_settings_v1';
+const CUSTOM_MODELS_TTL_MS = 30 * 60 * 1000;
 
 const PROVIDER_MODELS: Record<AiProvider, { label: string; value: string }[]> = {
   openai: [
@@ -73,8 +74,63 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
   });
   const [customId, setCustomId] = useState('');
   const [cacheNote, setCacheNote] = useState<string | null>(null);
+  const [customModels, setCustomModels] = useState<string[]>([]);
+  const [customModelsLoading, setCustomModelsLoading] = useState(false);
+  const [customModelsError, setCustomModelsError] = useState<string | null>(null);
 
   const model = modelByProvider[provider] || getDefaultModel(provider);
+
+  const getCustomModelsCacheKey = (id?: string) => `cloudtrack_custom_models:${id || 'default'}`;
+
+  const readCustomModelsCache = (id?: string) => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem(getCustomModelsCacheKey(id));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { ts?: number; models?: string[] };
+      if (!parsed?.ts || !Array.isArray(parsed?.models)) return null;
+      if (Date.now() - parsed.ts > CUSTOM_MODELS_TTL_MS) return null;
+      return parsed.models;
+    } catch {
+      return null;
+    }
+  };
+
+  const writeCustomModelsCache = (id: string | undefined, models: string[]) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(
+        getCustomModelsCacheKey(id),
+        JSON.stringify({ ts: Date.now(), models })
+      );
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  const loadCustomModels = async (options?: { force?: boolean }) => {
+    const keyId = customId.trim() || undefined;
+    if (!options?.force) {
+      const cached = readCustomModelsCache(keyId);
+      if (cached) {
+        setCustomModels(cached);
+        setCustomModelsError(null);
+        return;
+      }
+    }
+
+    setCustomModelsLoading(true);
+    setCustomModelsError(null);
+    const result = await fetchCustomModels(keyId, options?.force);
+    if (result.error) {
+      setCustomModelsError(result.error);
+      setCustomModels([]);
+    } else {
+      setCustomModels(result.models);
+      writeCustomModelsCache(keyId, result.models);
+    }
+    setCustomModelsLoading(false);
+  };
 
   useEffect(() => {
     const saved = readAiSettings();
@@ -103,12 +159,23 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
     }
   }, [provider, modelByProvider, customId]);
 
+  useEffect(() => {
+    if (provider !== 'custom') return;
+    const timer = setTimeout(() => {
+      void loadCustomModels();
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [provider, customId]);
+
   const handleProviderChange = (next: AiProvider) => {
     setProvider(next);
     setModelByProvider(prev => ({
       ...prev,
       [next]: prev[next] || getDefaultModel(next)
     }));
+    if (next === 'custom') {
+      setCustomModelsError(null);
+    }
   };
 
   const hashResources = (items: Resource[]) => {
@@ -181,6 +248,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
     }
   };
 
+  const modelOptions =
+    provider === 'custom'
+      ? customModels.map((value) => ({ label: value, value }))
+      : PROVIDER_MODELS[provider];
+  const modelListId = `ai-models-${provider}`;
+
   return (
     <div className="bg-white/90 dark:bg-slate-900/70 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm overflow-hidden animate-fade-in blueprint-card">
       <span className="blueprint-dimension" data-dim="ASSIST" />
@@ -221,7 +294,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
             </select>
             <div className="relative">
               <input
-                {...(provider !== 'custom' ? { list: `ai-models-${provider}` } : {})}
+                {...(modelOptions.length ? { list: modelListId } : {})}
                 value={model}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -233,9 +306,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
                 placeholder="输入模型名"
                 className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[200px]"
               />
-              {provider !== 'custom' && (
-                <datalist id={`ai-models-${provider}`}>
-                  {PROVIDER_MODELS[provider].map((item) => (
+              {modelOptions.length > 0 && (
+                <datalist id={modelListId}>
+                  {modelOptions.map((item) => (
                     <option key={item.value} value={item.value}>{item.label}</option>
                   ))}
                 </datalist>
@@ -250,6 +323,17 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
               />
             )}
           </div>
+          {provider === 'custom' && (
+            <div className="text-xs text-slate-400">
+              {customModelsLoading
+                ? 'Loading model list...'
+                : customModelsError
+                  ? 'Failed to load model list; you can type manually.'
+                  : customModels.length
+                    ? `Loaded ${customModels.length} models`
+                    : 'Type a model name manually.'}
+            </div>
+          )}
 
           <button
             onClick={handleAnalyze}

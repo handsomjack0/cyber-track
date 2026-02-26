@@ -86,3 +86,33 @@ export const analyzePortfolio = async (
     return "Failed to connect to analysis server. Please check your network or API configuration.";
   }
 };
+
+export const fetchCustomModels = async (
+  customId?: string,
+  force?: boolean
+): Promise<{ models: string[]; error?: string; cached?: boolean }> => {
+  try {
+    const response = await requestJson<{ models?: string[]; error?: string; cached?: boolean }>(
+      '/api/ai/models',
+      {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ provider: 'custom', customId, force }),
+        timeoutMs: 12000,
+        throwOnError: false
+      }
+    );
+
+    if (!response.ok) {
+      return { models: [], error: response.data?.error || 'Failed to fetch models.' };
+    }
+
+    return {
+      models: Array.isArray(response.data?.models) ? response.data!.models! : [],
+      cached: response.data?.cached
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Network request failed';
+    return { models: [], error: message };
+  }
+};
