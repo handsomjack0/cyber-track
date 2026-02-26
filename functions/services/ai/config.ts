@@ -34,6 +34,41 @@ type CustomEndpoint = {
   defaultModel?: string;
 };
 
+const isHttpUrl = (value: string) => /^https?:\/\//i.test(value);
+
+const normalizeBaseUrl = (value?: string) => {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  if (isHttpUrl(raw)) return raw;
+  if (/^\/\//.test(raw)) return `https:${raw}`;
+  if (/^[a-z0-9.-]+(?::\d+)?(\/.*)?$/i.test(raw)) return `https://${raw}`;
+  return raw;
+};
+
+const resolveCustomUrl = (endpoint?: string, base?: string) => {
+  const rawEndpoint = (endpoint || '').trim();
+  if (!rawEndpoint) return '';
+
+  if (isHttpUrl(rawEndpoint)) return rawEndpoint;
+  if (/^\/\//.test(rawEndpoint)) return `https:${rawEndpoint}`;
+  if (/^[a-z0-9.-]+(?::\d+)?(\/.*)?$/i.test(rawEndpoint) && !rawEndpoint.startsWith('/')) {
+    return `https://${rawEndpoint}`;
+  }
+
+  const normalizedBase = normalizeBaseUrl(base);
+  if (!normalizedBase || !isHttpUrl(normalizedBase)) return rawEndpoint;
+
+  try {
+    const baseUrl = new URL(normalizedBase);
+    if (rawEndpoint.startsWith('/')) {
+      return new URL(rawEndpoint, `${baseUrl.origin}/`).toString();
+    }
+    const normalizedPathBase = normalizedBase.endsWith('/') ? normalizedBase : `${normalizedBase}/`;
+    return new URL(rawEndpoint, normalizedPathBase).toString();
+  } catch {
+    return rawEndpoint;
+  }
+};
 export const DEFAULT_MODELS: Record<AiProvider, string> = {
   openai: 'gpt-4o-mini',
   deepseek: 'deepseek-chat',
@@ -53,12 +88,12 @@ const MODEL_ENV_BY_PROVIDER: Record<AiProvider, keyof Env | 'AI_CUSTOM_MODEL'> =
 };
 
 const PROVIDER_ERRORS: Record<AiProvider, { code: string; message: string }> = {
-  openai: { code: 'MISSING_OPENAI_KEY', message: 'OpenAI API Key 未配置' },
-  deepseek: { code: 'MISSING_DEEPSEEK_KEY', message: 'DeepSeek API Key 未配置' },
-  openrouter: { code: 'MISSING_OPENROUTER_KEY', message: 'OpenRouter API Key 未配置' },
-  github: { code: 'MISSING_GITHUB_MODELS', message: 'GitHub Models 配置不完整' },
-  custom: { code: 'MISSING_CUSTOM_BASE', message: '自建通道地址未配置' },
-  gemini: { code: 'MISSING_GEMINI_KEY', message: 'Gemini API Key 未配置' }
+  openai: { code: 'MISSING_OPENAI_KEY', message: 'OpenAI API key is not configured.' },
+  deepseek: { code: 'MISSING_DEEPSEEK_KEY', message: 'DeepSeek API key is not configured.' },
+  openrouter: { code: 'MISSING_OPENROUTER_KEY', message: 'OpenRouter API key is not configured.' },
+  github: { code: 'MISSING_GITHUB_MODELS', message: 'GitHub Models configuration is incomplete.' },
+  custom: { code: 'MISSING_CUSTOM_BASE', message: 'Custom endpoint URL is not configured.' },
+  gemini: { code: 'MISSING_GEMINI_KEY', message: 'Gemini API key is not configured.' }
 };
 
 const DEFAULT_RUNTIME: AiRuntimeSettings = {
@@ -197,7 +232,8 @@ export const resolveProvider = (
         if (!selected) {
           return { error: { code: 'CUSTOM_ENDPOINT_NOT_FOUND', message: '自建站标识不存在' } };
         }
-        const mode: AiMode = /\/chat\/completions$/i.test(selected.url) ? 'chat' : 'completion';
+        const endpointUrl = resolveCustomUrl(selected.url, env.CUSTOM_AI_BASE_URL);
+        const mode: AiMode = /\/chat\/completions$/i.test(endpointUrl) ? 'chat' : 'completion';
         const endpointModels = parseModelList(selected.defaultModel);
         return {
           config: {
@@ -206,7 +242,7 @@ export const resolveProvider = (
             model: resolveModel(env, provider, options?.model, selected.defaultModel),
             modelFallbacks: unique([options?.model, ...endpointModels, env.AI_CUSTOM_MODEL, env.AI_DEFAULT_MODEL]),
             apiKey: selected.key || env.CUSTOM_AI_API_KEY,
-            url: selected.url,
+            url: endpointUrl,
             mode
           }
         };
@@ -218,11 +254,12 @@ export const resolveProvider = (
 
       const rawEndpoint = env.CUSTOM_AI_ENDPOINT?.trim();
       const rawBase = env.CUSTOM_AI_BASE_URL?.trim();
+      const normalizedBase = normalizeBaseUrl(rawBase);
       let url = '';
       if (rawEndpoint) {
-        url = rawEndpoint;
-      } else if (rawBase) {
-        const base = rawBase.replace(/\/$/, '');
+        url = resolveCustomUrl(rawEndpoint, normalizedBase);
+      } else if (normalizedBase) {
+        const base = normalizedBase.replace(/\/$/, '');
         const hasFullEndpoint = /\/(chat\/completions|completions)$/i.test(base);
         url = hasFullEndpoint ? base : `${base}/v1/chat/completions`;
       }
@@ -330,3 +367,4 @@ export const resolveProviderCandidates = (
     return true;
   });
 };
+

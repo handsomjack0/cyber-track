@@ -9,6 +9,42 @@ interface ModelsRequest {
 
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
+const isHttpUrl = (value: string) => /^https?:\/\//i.test(value);
+
+const normalizeBaseUrl = (value?: string) => {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  if (isHttpUrl(raw)) return raw;
+  if (/^\/\//.test(raw)) return `https:${raw}`;
+  if (/^[a-z0-9.-]+(?::\d+)?(\/.*)?$/i.test(raw)) return `https://${raw}`;
+  return raw;
+};
+
+const toAbsoluteEndpointUrl = (endpoint: string, base?: string) => {
+  const raw = (endpoint || '').trim();
+  if (!raw) return '';
+
+  if (isHttpUrl(raw)) return raw;
+  if (/^\/\//.test(raw)) return `https:${raw}`;
+  if (/^[a-z0-9.-]+(?::\d+)?(\/.*)?$/i.test(raw) && !raw.startsWith('/')) {
+    return `https://${raw}`;
+  }
+
+  const normalizedBase = normalizeBaseUrl(base);
+  if (!normalizedBase || !isHttpUrl(normalizedBase)) return raw;
+
+  try {
+    const baseUrl = new URL(normalizedBase);
+    if (raw.startsWith('/')) {
+      return new URL(raw, `${baseUrl.origin}/`).toString();
+    }
+    const normalizedPathBase = normalizedBase.endsWith('/') ? normalizedBase : `${normalizedBase}/`;
+    return new URL(raw, normalizedPathBase).toString();
+  } catch {
+    return raw;
+  }
+};
+
 const safeJson = async (response: Response): Promise<any> => {
   try {
     return await response.json();
@@ -17,20 +53,41 @@ const safeJson = async (response: Response): Promise<any> => {
   }
 };
 
-const buildModelsCandidates = (endpointUrl: string) => {
-  const trimmed = endpointUrl.replace(/\/$/, '');
-  const match = trimmed.match(/(.*)\/(?:chat\/completions|completions)$/i);
-  const base = match ? match[1] : trimmed;
-  const primary = base.endsWith('/models') ? base : `${base}/models`;
-  const candidates = [primary];
+const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '');
 
-  if (primary.includes('/v1/models')) {
-    candidates.push(primary.replace('/v1/models', '/models'));
-  } else if (primary.endsWith('/models')) {
-    candidates.push(primary.replace(/\/models$/, '/v1/models'));
+const joinPath = (basePath: string, suffix: string) => {
+  const left = trimTrailingSlash(basePath);
+  const right = suffix.startsWith('/') ? suffix : `/${suffix}`;
+  return left ? `${left}${right}` : right;
+};
+
+const buildModelsCandidates = (absoluteEndpointUrl: string) => {
+  const endpoint = new URL(absoluteEndpointUrl);
+  const normalizedPath = trimTrailingSlash(endpoint.pathname || '/');
+
+  let basePath = normalizedPath;
+  if (/\/chat\/completions$/i.test(normalizedPath)) {
+    basePath = normalizedPath.replace(/\/chat\/completions$/i, '');
+  } else if (/\/completions$/i.test(normalizedPath)) {
+    basePath = normalizedPath.replace(/\/completions$/i, '');
+  } else if (/\/models$/i.test(normalizedPath)) {
+    basePath = normalizedPath.replace(/\/models$/i, '');
   }
 
-  return Array.from(new Set(candidates));
+  const candidates = [
+    joinPath(basePath, '/models'),
+    /\/v1$/i.test(basePath)
+      ? joinPath(basePath.replace(/\/v1$/i, ''), '/models')
+      : joinPath(basePath, '/v1/models')
+  ];
+
+  return Array.from(new Set(candidates)).map((path) => {
+    const url = new URL(endpoint.toString());
+    url.pathname = path;
+    url.search = '';
+    url.hash = '';
+    return url.toString();
+  });
 };
 
 const normalizeModels = (payload: any): string[] => {
@@ -113,7 +170,12 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     return errorResponse('Custom endpoint URL not configured', 400);
   }
 
-  const modelsCandidates = buildModelsCandidates(endpointUrl);
+  const absoluteEndpointUrl = toAbsoluteEndpointUrl(endpointUrl, env.CUSTOM_AI_BASE_URL);
+  if (!isHttpUrl(absoluteEndpointUrl)) {
+    return errorResponse('Custom endpoint URL must be absolute (include protocol and host)', 400);
+  }
+
+  const modelsCandidates = buildModelsCandidates(absoluteEndpointUrl);
   const headers: Record<string, string> = {
     Accept: 'application/json'
   };
