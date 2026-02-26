@@ -9,52 +9,73 @@ interface AnalyzeRequest {
   customId?: string;
 }
 
-const buildPrompt = (resources: Resource[]) => `
-你是 IT 资产治理顾问（FinOps + SRE）。请基于以下 JSON 数据输出简洁、可执行的中文 Markdown 报告。
+const buildPrompt = (resources: Resource[]) => {
+  const payload = JSON.stringify(resources);
 
-数据：
-${JSON.stringify(resources)}
+  return [
+    'You are an IT asset management advisor (FinOps + SRE).',
+    'Write a concise and actionable report in Simplified Chinese based on the JSON data.',
+    '',
+    'Hard rules:',
+    '1. Output Markdown only.',
+    '2. Never output chain-of-thought, reasoning process, hidden analysis, or tags like <think>.',
+    '3. Do not repeat the raw JSON.',
+    '4. Keep total length around 500-900 Chinese characters.',
+    '5. If information is uncertain, explicitly mark it as "insufficient information" or "assumption".',
+    '6. Keep the heading structure exactly as specified.',
+    '7. Keep each markdown table row on its own line.',
+    '',
+    'Use this exact structure:',
+    '## Portfolio Overview',
+    '- 2-3 sentences covering scale, risk, cost, and top-priority issue.',
+    '',
+    '### 1. Urgent Alerts (next 30 days)',
+    '- List expiring/expired assets with: name, type, provider, expiry date, remaining days, and cost.',
+    '- If none, clearly say there is no urgent expiry risk in the next 30 days.',
+    '',
+    '### 2. Cost Analysis',
+    '- Estimated monthly total cost',
+    '- Estimated yearly total cost',
+    '- Breakdown table:',
+    '| Type | Count | Monthly Cost | Yearly Cost | Main Provider | Notes |',
+    '| --- | --- | --- | --- | --- | --- |',
+    '| VPS |  |  |  |  |  |',
+    '| DOMAIN |  |  |  |  |  |',
+    '| PHONE_NUMBER |  |  |  |  |  |',
+    '| ACCOUNT |  |  |  |  |  |',
+    '',
+    '### 3. Optimization Actions (priority order)',
+    '- Give 4-6 items. Each item includes: action, expected benefit, risk/prerequisite.',
+    '- Prioritize: renewal strategy, idle cleanup, vendor consolidation, billing optimization, auto-renew risk.',
+    '',
+    '### 4. Missing Information',
+    '- List missing fields and impact: billingCycle, expiryDate, cost, currency, autoRenew, tags.',
+    '- If key fields are mostly complete, state that key fields are mostly complete.',
+    '',
+    'Calculation rules:',
+    '- Monthly/Yearly: count by billing cycle.',
+    '- OneTime: do not include in monthly total; place in notes.',
+    '- Unknown cycle: use conservative estimate and state assumptions.',
+    '',
+    'Data JSON:',
+    payload
+  ].join('\n');
+};
 
-输出要求：
-1. 不要输出代码块，不要复述原始 JSON。
-2. 总长度控制在 500-900 中文字。
-3. 无法确定的信息明确标注为“信息不足”或“假设”。
-4. 标题必须保留 Markdown 标记（## / ###），不要省略井号。
-5. 表格每一行必须单独换行，不要把多行表格压在同一行。
+const sanitizeAiOutput = (text: string) => {
+  let output = (text || '').replace(/\r\n/g, '\n');
 
-必须使用以下结构：
+  output = output.replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, '');
+  output = output.replace(/<thinking\b[^>]*>[\s\S]*?<\/thinking>/gi, '');
+  output = output.replace(/```(?:thinking|reasoning|analysis)[\s\S]*?```/gi, '');
 
-## 资产管理总览
-- 2-3 句，概述规模、风险、成本，并指出最高优先级问题。
+  const firstHeadingIdx = output.search(/(^|\n)##\s+/);
+  if (firstHeadingIdx > 0) {
+    output = output.slice(firstHeadingIdx).trimStart();
+  }
 
-### 1. 紧急预警（30 天内）
-- 列出到期或已过期资产（名称、类型、服务商、到期日、剩余天数、费用）。
-- 若没有，写：未来 30 天无紧急到期风险。
-
-### 2. 成本分析
-- 月度总成本（估算）
-- 年度总成本（估算）
-- 类型拆分表：
-| 类型 | 数量 | 月度成本 | 年度成本 | 主要服务商 | 备注 |
-| --- | --- | --- | --- | --- | --- |
-| VPS |  |  |  |  |  |
-| DOMAIN |  |  |  |  |  |
-| PHONE_NUMBER |  |  |  |  |  |
-| ACCOUNT |  |  |  |  |  |
-
-### 3. 优化建议（按优先级）
-- 给出 4-6 条，每条包含：动作、预期收益、风险/前提。
-- 优先考虑：续费策略、闲置清理、供应商整合、账期优化、自动续费风险。
-
-### 4. 待确认信息
-- 列出缺失字段对判断的影响（例如 billingCycle、expiryDate、cost、currency、autoRenew、tags）。
-- 若关键字段完整，写：当前关键字段基本完整。
-
-计算规则：
-- Monthly/Yearly 按周期计入。
-- OneTime 不计入月度，放在备注。
-- 周期未知时做保守估算并说明假设。
-`;
+  return output.trim();
+};
 
 export const onRequestPost = async (context: { request: Request; env: Env }) => {
   const { request, env } = context;
@@ -81,7 +102,19 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     });
 
     model = result.model;
-    return jsonResponse({ success: true, analysis: result.text, provider: result.provider, model: result.model });
+    const analysis = sanitizeAiOutput(result.text);
+    if (!analysis) {
+      return errorWithCode(
+        'AI Backend Error: empty or non-displayable response',
+        'AI_EMPTY_RESPONSE',
+        502,
+        provider,
+        model,
+        requestId
+      );
+    }
+
+    return jsonResponse({ success: true, analysis, provider: result.provider, model: result.model });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('AI Backend Error:', message);
@@ -90,19 +123,22 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       ? 'AI_TIMEOUT'
       : message.includes('429')
         ? 'AI_RATE_LIMIT'
-        : (lower.includes('model_not_found') || lower.includes('model not found'))
+        : lower.includes('model_not_found') || lower.includes('model not found')
           ? 'AI_MODEL_NOT_FOUND'
-          : (message.includes('无可用渠道') || lower.includes('no available distributor') || lower.includes('distributor'))
+          : lower.includes('no available distributor') || lower.includes('distributor') || lower.includes('unavailable channel')
             ? 'AI_MODEL_UNAVAILABLE'
-            : lower.includes('(503)')
+            : lower.includes('(503)') || lower.includes('service unavailable')
               ? 'AI_UPSTREAM_UNAVAILABLE'
               : 'AI_BACKEND_ERROR';
-    const status =
-      code === 'AI_MODEL_NOT_FOUND' ? 400 :
-      code === 'AI_RATE_LIMIT' ? 429 :
-      code === 'AI_TIMEOUT' ? 504 :
-      code === 'AI_MODEL_UNAVAILABLE' || code === 'AI_UPSTREAM_UNAVAILABLE' ? 503 :
-      500;
+    const status = code === 'AI_MODEL_NOT_FOUND'
+      ? 400
+      : code === 'AI_RATE_LIMIT'
+        ? 429
+        : code === 'AI_TIMEOUT'
+          ? 504
+          : code === 'AI_MODEL_UNAVAILABLE' || code === 'AI_UPSTREAM_UNAVAILABLE'
+            ? 503
+            : 500;
     return errorWithCode(`AI Backend Error: ${message}`, code, status, provider, model, requestId);
   }
 };

@@ -32,9 +32,7 @@ const PROVIDER_MODELS: Record<AiProvider, { label: string; value: string }[]> = 
     { label: 'phi-3-mini', value: 'phi-3-mini' },
     { label: 'mistral-small', value: 'mistral-small' }
   ],
-  custom: [
-    { label: 'Custom model', value: '' }
-  ],
+  custom: [{ label: 'Custom model', value: '' }],
   gemini: [
     { label: 'gemini-1.5-flash', value: 'gemini-1.5-flash' },
     { label: 'gemini-1.5-pro', value: 'gemini-1.5-pro' }
@@ -77,8 +75,10 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
   const [customModels, setCustomModels] = useState<string[]>([]);
   const [customModelsLoading, setCustomModelsLoading] = useState(false);
   const [customModelsError, setCustomModelsError] = useState<string | null>(null);
+  const [customModelMode, setCustomModelMode] = useState<'list' | 'manual'>('list');
 
   const model = modelByProvider[provider] || getDefaultModel(provider);
+  const modelTrimmed = model.trim();
 
   const getCustomModelsCacheKey = (id?: string) => `cloudtrack_custom_models:${id || 'default'}`;
 
@@ -99,10 +99,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
   const writeCustomModelsCache = (id: string | undefined, models: string[]) => {
     if (typeof window === 'undefined') return;
     try {
-      localStorage.setItem(
-        getCustomModelsCacheKey(id),
-        JSON.stringify({ ts: Date.now(), models })
-      );
+      localStorage.setItem(getCustomModelsCacheKey(id), JSON.stringify({ ts: Date.now(), models }));
     } catch {
       // ignore storage errors
     }
@@ -167,6 +164,20 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
     return () => clearTimeout(timer);
   }, [provider, customId]);
 
+  useEffect(() => {
+    if (provider !== 'custom') return;
+    if (customModels.length === 0) {
+      setCustomModelMode('manual');
+      return;
+    }
+
+    setModelByProvider((prev) => {
+      const current = prev.custom?.trim();
+      if (current && customModels.includes(current)) return prev;
+      return { ...prev, custom: customModels[0] };
+    });
+  }, [provider, customModels]);
+
   const handleProviderChange = (next: AiProvider) => {
     setProvider(next);
     setModelByProvider((prev) => ({
@@ -175,7 +186,15 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
     }));
     if (next === 'custom') {
       setCustomModelsError(null);
+      setCustomModelMode(customModels.length > 0 ? 'list' : 'manual');
     }
+  };
+
+  const setCurrentModel = (value: string) => {
+    setModelByProvider((prev) => ({
+      ...prev,
+      [provider]: value
+    }));
   };
 
   const hashResources = (items: Resource[]) => {
@@ -199,7 +218,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
     return String(hash);
   };
 
-  const getCacheKey = () => `ai_analysis:${provider}:${model}:${hashResources(resources)}`;
+  const getCacheKey = () => `ai_analysis:${provider}:${modelTrimmed}:${hashResources(resources)}`;
 
   const readCache = () => {
     try {
@@ -225,6 +244,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
 
   const handleAnalyze = async () => {
     if (resources.length === 0) return;
+    if (!modelTrimmed) {
+      setAnalysis('Please select or enter a model first.');
+      setCacheNote(null);
+      return;
+    }
+
     setLoading(true);
     setAnalysis(null);
     setCacheNote(null);
@@ -232,7 +257,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
       const result = await analyzePortfolio(
         resources,
         provider,
-        model,
+        modelTrimmed,
         provider === 'custom' ? (customId.trim() || undefined) : undefined
       );
       setAnalysis(result);
@@ -250,11 +275,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
     }
   };
 
-  const modelOptions =
-    provider === 'custom'
-      ? customModels.map((value) => ({ label: value, value }))
-      : PROVIDER_MODELS[provider];
+  const modelOptions = PROVIDER_MODELS[provider];
   const modelListId = `ai-models-${provider}`;
+  const useCustomList = provider === 'custom' && customModels.length > 0 && customModelMode === 'list';
 
   return (
     <div className="bg-white/90 dark:bg-slate-900/70 rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-sm overflow-hidden animate-fade-in blueprint-card">
@@ -293,16 +316,13 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
               <option value="gemini">Gemini</option>
             </select>
 
-            {provider === 'custom' && customModels.length > 0 && (
+            {provider === 'custom' && useCustomList && (
               <select
-                value={customModels.includes(model) ? model : ''}
+                value={customModels.includes(modelTrimmed) ? modelTrimmed : ''}
                 onChange={(e) => {
-                  const value = e.target.value;
+                  const value = e.target.value.trim();
                   if (!value) return;
-                  setModelByProvider((prev) => ({
-                    ...prev,
-                    [provider]: value
-                  }));
+                  setCurrentModel(value);
                 }}
                 className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[220px]"
               >
@@ -315,43 +335,60 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
               </select>
             )}
 
-            <div className="relative">
-              <input
-                {...(provider !== 'custom' && modelOptions.length ? { list: modelListId } : {})}
-                value={model}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setModelByProvider((prev) => ({
-                    ...prev,
-                    [provider]: value
-                  }));
-                }}
-                placeholder={provider === 'custom' ? 'Type model name (manual)' : 'Input model name'}
-                className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[220px]"
-              />
-              {provider !== 'custom' && modelOptions.length > 0 && (
-                <datalist id={modelListId}>
-                  {modelOptions.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </datalist>
-              )}
-            </div>
+            {(provider !== 'custom' || !useCustomList) && (
+              <div className="relative">
+                <input
+                  {...(provider !== 'custom' && modelOptions.length ? { list: modelListId } : {})}
+                  value={model}
+                  onChange={(e) => setCurrentModel(e.target.value)}
+                  placeholder={provider === 'custom' ? 'Type model name (manual)' : 'Input model name'}
+                  className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[220px]"
+                />
+                {provider !== 'custom' && modelOptions.length > 0 && (
+                  <datalist id={modelListId}>
+                    {modelOptions.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </datalist>
+                )}
+              </div>
+            )}
 
             {provider === 'custom' && (
-              <input
-                value={customId}
-                onChange={(e) => setCustomId(e.target.value)}
-                placeholder="Endpoint ID (optional, e.g. daiju)"
-                className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[240px]"
-              />
+              <>
+                {customModels.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setCustomModelMode((prev) => (prev === 'list' ? 'manual' : 'list'))}
+                    className="px-2.5 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-xs text-slate-200 hover:bg-slate-800/80"
+                  >
+                    {useCustomList ? 'Manual Input' : 'Use Model List'}
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => void loadCustomModels({ force: true })}
+                  disabled={customModelsLoading}
+                  className="px-2.5 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-xs text-slate-200 hover:bg-slate-800/80 disabled:opacity-60"
+                >
+                  {customModelsLoading ? 'Refreshing...' : 'Refresh Models'}
+                </button>
+
+                <input
+                  value={customId}
+                  onChange={(e) => setCustomId(e.target.value)}
+                  placeholder="Endpoint ID (optional, e.g. daiju)"
+                  className="appearance-none px-3 py-2 rounded-xl border border-sky-400/30 bg-slate-900/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400/30 w-[240px]"
+                />
+              </>
             )}
           </div>
 
           {provider === 'custom' && (
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-slate-400 whitespace-nowrap">
               {customModelsLoading
                 ? 'Loading model list...'
                 : customModelsError
@@ -366,9 +403,10 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ resources }) => {
             onClick={handleAnalyze}
             disabled={loading || resources.length === 0}
             className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-200 flex items-center gap-2.5 shadow-sm overflow-hidden
-              ${loading || resources.length === 0
-                ? 'bg-slate-800/60 text-slate-400 cursor-not-allowed'
-                : 'bg-sky-400/20 text-sky-100 border border-sky-400/40 hover:bg-sky-400/30 hover:shadow-md hover:-translate-y-0.5'
+              ${
+                loading || resources.length === 0
+                  ? 'bg-slate-800/60 text-slate-400 cursor-not-allowed'
+                  : 'bg-sky-400/20 text-sky-100 border border-sky-400/40 hover:bg-sky-400/30 hover:shadow-md hover:-translate-y-0.5'
               }`}
           >
             <div className="absolute inset-0 bg-sky-200/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
