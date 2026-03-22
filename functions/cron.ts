@@ -52,7 +52,7 @@ export const onScheduled: PagesFunction<Env> = async (context) => {
     const lastNotified = resSettings?.lastNotified;
     if (lastNotified === todayKey) continue;
 
-    const result = await sendResourceNotification(env, resource, daysRemaining, settings);
+    const result = await sendResourceNotification(env, resource, settings, daysRemaining);
     if (!result.success) continue;
 
     const updatedSettings = {

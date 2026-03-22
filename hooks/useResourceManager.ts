@@ -73,9 +73,6 @@ export const useResourceManager = () => {
   }, [fetchResources]);
 
   const addResource = async (resourceData: Partial<Resource>) => {
-    // Optimistic UI update can be complex with ID generation,
-    // so we'll wait for the server for creation to be safe,
-    // or manually generate ID here.
     try {
       const savedResource = await resourceService.create(resourceData);
       setResources(prev => {
@@ -105,8 +102,22 @@ export const useResourceManager = () => {
     }
   };
 
+  const renewResource = async (id: string) => {
+    try {
+      const savedResource = await resourceService.renew(id);
+      setResources(prev => {
+        const next = prev.map(r => r.id === savedResource.id ? savedResource : r);
+        persistCache(next);
+        return next;
+      });
+      return savedResource;
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  };
+
   const deleteResource = async (id: string) => {
-    // Optimistic update
     const original = [...resources];
     setResources(prev => {
       const next = prev.filter(r => r.id !== id);
@@ -118,10 +129,9 @@ export const useResourceManager = () => {
       await resourceService.delete(id);
     } catch (e) {
       console.error(e);
-      // Rollback
       setResources(original);
       persistCache(original);
-      throw new Error('删除失败');
+      throw new Error('Delete failed');
     }
   };
 
@@ -132,6 +142,7 @@ export const useResourceManager = () => {
     error,
     addResource,
     updateResource,
+    renewResource,
     deleteResource,
     refreshResources: fetchResources
   };

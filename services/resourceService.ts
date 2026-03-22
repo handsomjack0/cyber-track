@@ -1,4 +1,3 @@
-
 import { Resource } from '../types/index';
 import { requestJson } from '../utils/apiClient';
 
@@ -52,6 +51,17 @@ export const resourceService = {
     );
     if (!res.ok) throw new Error(res.data?.error || 'Failed to update resource');
     if (!res.data?.data) throw new Error('Failed to update resource');
+    return res.data.data;
+  },
+
+  renew: async (id: string): Promise<Resource> => {
+    const res = await requestJson<{ data?: Resource; error?: string }>(`${API_BASE}/${id}/renew`, {
+      method: 'POST',
+      headers: getHeaders(),
+      timeoutMs: 10000
+    });
+    if (!res.ok) throw new Error(res.data?.error || 'Failed to renew resource');
+    if (!res.data?.data) throw new Error('Failed to renew resource');
     return res.data.data;
   },
 

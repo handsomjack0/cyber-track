@@ -50,7 +50,7 @@ export const onRequestPost = async (context: { env: Env, request: Request }) => 
 
       if (shouldNotify && !alreadyNotifiedToday) {
         // Send Notification
-        const result = await sendResourceNotification(env, res as any, days, settings);
+        const result = await sendResourceNotification(env, res as any, settings, days);
         
         if (result.success) {
            // Update lastNotified in DB

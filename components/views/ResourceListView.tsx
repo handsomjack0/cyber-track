@@ -1,4 +1,4 @@
-锘縤mport React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Resource, ResourceType } from '../../types';
 import ResourceTable from '../resources/ResourceTable';
 import SearchInput from '../common/SearchInput';
@@ -11,11 +11,12 @@ interface ResourceListViewProps {
   onAdd: () => void;
   onEdit: (resource: Resource) => void;
   onDelete: (id: string) => void;
+  onRenew: (resource: Resource) => void;
   addButtonLabel: string;
 }
 
 const ResourceListView: React.FC<ResourceListViewProps> = ({
-  title, subtitle, resources, resourceType, onAdd, onEdit, onDelete, addButtonLabel
+  title, subtitle, resources, resourceType, onAdd, onEdit, onDelete, onRenew, addButtonLabel
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -36,7 +37,7 @@ const ResourceListView: React.FC<ResourceListViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 blueprint-card p-5">
         <span className="blueprint-dimension" data-dim="SECTION" />
         <div>
-          <div className="text-xs uppercase tracking-[0.2em] text-indigo-500 font-semibold">璧勬簮绠＄悊</div>
+          <div className="text-xs uppercase tracking-[0.2em] text-indigo-500 font-semibold">资源管理</div>
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mt-1 blueprint-title">{title}</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">{subtitle}</p>
         </div>
@@ -60,6 +61,7 @@ const ResourceListView: React.FC<ResourceListViewProps> = ({
         resources={filteredResources}
         onDelete={onDelete}
         onEdit={onEdit}
+        onRenew={onRenew}
         hideHeader
       />
     </div>
@@ -67,4 +69,3 @@ const ResourceListView: React.FC<ResourceListViewProps> = ({
 };
 
 export default ResourceListView;
-

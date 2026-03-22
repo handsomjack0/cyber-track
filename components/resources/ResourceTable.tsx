@@ -1,6 +1,6 @@
-Ôªøimport React from 'react';
+import React from 'react';
 import { Resource, ResourceType, SortConfig, SortField, BillingCycle } from '../../types';
-import { Server, Globe, Trash2, Edit2, ArrowUp, ArrowDown, BellOff, Smartphone, Key } from 'lucide-react';
+import { Server, Globe, Trash2, Edit2, ArrowUp, ArrowDown, BellOff, Smartphone, Key, RefreshCw } from 'lucide-react';
 import { getDaysRemaining, getStatusStyles } from '../../utils/resourceUtils';
 import PrivacyField from '../common/PrivacyField';
 
@@ -9,6 +9,7 @@ interface ResourceTableProps {
   title: string;
   onDelete: (id: string) => void;
   onEdit: (resource: Resource) => void;
+  onRenew: (resource: Resource) => void;
   hideHeader?: boolean;
   sortConfig?: SortConfig;
   onSort?: (field: SortField) => void;
@@ -19,28 +20,27 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
   title,
   onDelete,
   onEdit,
+  onRenew,
   hideHeader,
   sortConfig,
   onSort
 }) => {
-
   const StatusPill = ({ days, cycle }: { days: number | null; cycle?: BillingCycle }) => {
     const style = getStatusStyles(days);
 
     if (cycle === BillingCycle.ONE_TIME || days === null) {
       return (
         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">
-          ÈïøÊúü / Êó†ÊúüÈôê
+          ≥§∆⁄ / Œﬁ∆⁄œﬁ
         </span>
       );
     }
 
     return (
       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${style.bg} ${style.text} ${style.border}`}>
-        {style.label === 'Ê≠£Â∏∏' || style.label === 'Á¥ßÊÄ•' || style.label === 'È¢ÑË≠¶'
-          ? `Ââ©‰Ωô ${days} Â§©`
-          : style.label
-        }
+        {style.label === '’˝≥£' || style.label === 'ΩÙº±' || style.label === '‘§æØ'
+          ? ` £”‡ ${days} ÃÏ`
+          : style.label}
       </span>
     );
   };
@@ -87,7 +87,7 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
     const isEnabled = settings?.enabled ?? true;
     if (!isEnabled) {
       return (
-        <span title="ÈÄöÁü•Â∑≤ÂÖ≥Èó≠" className="inline-flex">
+        <span title="Õ®÷™“—πÿ±’" className="inline-flex">
           <BellOff size={14} className="text-slate-300" />
         </span>
       );
@@ -98,13 +98,17 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
   const CycleBadge = ({ cycle }: { cycle?: BillingCycle }) => {
     if (!cycle) return null;
     const map = {
-      [BillingCycle.MONTHLY]: { label: 'Êúà‰ªò', color: 'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20' },
-      [BillingCycle.QUARTERLY]: { label: 'Â≠£‰ªò', color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' },
-      [BillingCycle.YEARLY]: { label: 'Âπ¥‰ªò', color: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' },
-      [BillingCycle.ONE_TIME]: { label: '‰∏ÄÊ¨°ÊÄß', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20' },
+      [BillingCycle.MONTHLY]: { label: '‘¬∏∂', color: 'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20' },
+      [BillingCycle.QUARTERLY]: { label: 'ºæ∏∂', color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' },
+      [BillingCycle.YEARLY]: { label: 'ƒÍ∏∂', color: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' },
+      [BillingCycle.ONE_TIME]: { label: '“ª¥Œ–‘', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20' }
     };
     const c = map[cycle] || map[BillingCycle.MONTHLY];
     return <span className={`text-[10px] px-1.5 py-0.5 rounded ml-1.5 font-normal ${c.color}`}>{c.label}</span>;
+  };
+
+  const canRenew = (resource: Resource) => {
+    return Boolean(resource.expiryDate && resource.billingCycle && resource.billingCycle !== BillingCycle.ONE_TIME);
   };
 
   return (
@@ -120,12 +124,12 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-slate-100 dark:border-slate-800 text-xs font-medium text-slate-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-800/50">
-              <SortableHeader field="name" label="ËµÑÊ∫êÂêçÁß∞" />
-              <SortableHeader field="provider" label="ÊúçÂä°ÂïÜ" />
-              <SortableHeader field="status" label="Áä∂ÊÄÅ" />
-              <SortableHeader field="expiryDate" label="Áª≠Ë¥π/Âà∞Êúü" />
-              <SortableHeader field="cost" label="Ë¥πÁî®" align="right" />
-              <th className="px-6 py-4 font-semibold text-right w-24">Êìç‰Ωú</th>
+              <SortableHeader field="name" label="◊ ‘¥√˚≥∆" />
+              <SortableHeader field="provider" label="∑˛ŒÒ…Ã" />
+              <SortableHeader field="status" label="◊¥Ã¨" />
+              <SortableHeader field="expiryDate" label="–¯∑—/µΩ∆⁄" />
+              <SortableHeader field="cost" label="∑—”√" align="right" />
+              <th className="px-6 py-4 font-semibold text-right w-36">≤Ÿ◊˜</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
@@ -136,7 +140,7 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
                     <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center">
                       <Server size={20} className="opacity-20" />
                     </div>
-                    <span>ÂàóË°®‰∏∫Á©∫</span>
+                    <span>¡–±ÌŒ™ø’</span>
                   </div>
                 </td>
               </tr>
@@ -184,17 +188,26 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0">
+                        {canRenew(resource) && (
+                          <button
+                            onClick={() => onRenew(resource)}
+                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="–¯∆⁄"
+                          >
+                            <RefreshCw size={16} />
+                          </button>
+                        )}
                         <button
                           onClick={() => onEdit(resource)}
                           className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title="ÁºñËæë"
+                          title="±‡º≠"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button
                           onClick={() => onDelete(resource.id)}
                           className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                          title="Âà†Èô§"
+                          title="…æ≥˝"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -212,4 +225,3 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
 };
 
 export default ResourceTable;
-

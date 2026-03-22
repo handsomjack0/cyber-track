@@ -1,16 +1,14 @@
-
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
-// 资源表
 export const resources = sqliteTable('resources', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   provider: text('provider').notNull(),
-  expiryDate: text('expiry_date'), // ISO String YYYY-MM-DD
+  expiryDate: text('expiry_date'),
   startDate: text('start_date'),
   cost: real('cost').notNull().default(0),
   currency: text('currency').notNull().default('$'),
-  type: text('type').notNull(), // 'VPS' | 'DOMAIN' | ...
+  type: text('type').notNull(),
   status: text('status').notNull().default('Active'),
   autoRenew: integer('auto_renew', { mode: 'boolean' }).notNull().default(false),
   billingCycle: text('billing_cycle'),
@@ -23,10 +21,21 @@ export const resources = sqliteTable('resources', {
     channels?: { telegram: boolean; email: boolean; webhook: boolean };
   }>(),
   tags: text('tags', { mode: 'json' }).$type<string[]>().default([]),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date())
 });
 
-// 设置表
+export const resourceRenewalLogs = sqliteTable('resource_renewal_logs', {
+  id: text('id').primaryKey(),
+  resourceId: text('resource_id').notNull(),
+  previousExpiryDate: text('previous_expiry_date'),
+  nextExpiryDate: text('next_expiry_date').notNull(),
+  billingCycle: text('billing_cycle'),
+  previousStatus: text('previous_status'),
+  nextStatus: text('next_status').notNull().default('Active'),
+  note: text('note'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date())
+});
+
 export const settings = sqliteTable('settings', {
   id: text('id').primaryKey().$defaultFn(() => 'global'),
   reminderDays: integer('reminder_days').notNull().default(7),
@@ -42,16 +51,14 @@ export const settings = sqliteTable('settings', {
     enabled: boolean;
     url: string;
   }>().notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date())
 });
 
-// 安全日志表 (用于防暴力破解和 2FA)
 export const authLogs = sqliteTable('auth_logs', {
   ip: text('ip').primaryKey(),
   attempts: integer('attempts').notNull().default(0),
   lastAttemptAt: integer('last_attempt_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   blockedUntil: integer('blocked_until', { mode: 'timestamp' }),
-  // 2FA Fields - 新增字段
   otpCode: text('otp_code'),
-  otpExpiresAt: integer('otp_expires_at', { mode: 'timestamp' }),
+  otpExpiresAt: integer('otp_expires_at', { mode: 'timestamp' })
 });

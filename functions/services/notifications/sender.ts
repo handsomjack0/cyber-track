@@ -27,18 +27,34 @@ function displayValue(value: unknown): string {
 
 function formatChangeList(changes: string[]) {
   if (changes.length === 0) return '';
-  return `\n\n<b>变更项</b>\n${changes.map((item) => `• ${escapeHtml(item)}`).join('\n')}`;
+  return `\n\n<b>Changes</b>\n${changes.map((item) => `- ${escapeHtml(item)}`).join('\n')}`;
 }
 
 function normalizeProvider(provider: string) {
   return provider.replace(/^https?:\/\//i, '').replace(/\/$/, '');
 }
 
+function getExpiryStatusText(resource: Resource, daysRemaining: number) {
+  if (resource.autoRenew) {
+    if (daysRemaining < 0) return `Auto-renew enabled. Expired ${Math.abs(daysRemaining)} day(s) ago. Confirm upstream renewal status.`;
+    if (daysRemaining === 0) return 'Auto-renew enabled. Renewal should happen today; confirm billing result.';
+    return `Auto-renew enabled. ${daysRemaining} day(s) remaining before next billing checkpoint.`;
+  }
+
+  if (daysRemaining < 0) return `Expired ${Math.abs(daysRemaining)} day(s) ago.`;
+  if (daysRemaining === 0) return 'Expires today.';
+  return `${daysRemaining} day(s) remaining.`;
+}
+
+function getNotificationTitle(resource: Resource) {
+  return resource.autoRenew ? 'Auto-renew checkpoint' : 'Renewal reminder';
+}
+
 export async function sendResourceNotification(
   env: Env,
   resource: Resource,
-  daysRemaining: number,
-  settings: AppSettings
+  settings: AppSettings,
+  daysRemaining: number
 ): Promise<NotificationResult> {
   const channelsSent: string[] = [];
 
@@ -58,17 +74,19 @@ export async function sendResourceNotification(
   const safeType = escapeHtml(displayValue(resource.type));
   const safeExpiryDate = escapeHtml(displayValue(resource.expiryDate));
   const safeCost = `${escapeHtml(displayValue(resource.currency))}${escapeHtml(displayValue(resource.cost))}`;
-  const status = daysRemaining < 0 ? `已过期 ${Math.abs(daysRemaining)} 天` : `剩余 ${daysRemaining} 天`;
+  const safeStatus = escapeHtml(getExpiryStatusText(resource, daysRemaining));
+  const title = getNotificationTitle(resource);
 
   const message = [
-    `⏰ <b>续费提醒</b>`,
-    ``,
-    `📌 资产: <b>${safeName}</b>`,
-    `🏢 服务商: <b>${safeProvider}</b>`,
-    `🧩 类型: <b>${safeType}</b>`,
-    `🗓 到期日: <b>${safeExpiryDate}</b>`,
-    `💰 费用: <b>${safeCost}</b>`,
-    `📉 状态: <b>${escapeHtml(status)}</b>`
+    `<b>${escapeHtml(title)}</b>`,
+    '',
+    `Asset: <b>${safeName}</b>`,
+    `Provider: <b>${safeProvider}</b>`,
+    `Type: <b>${safeType}</b>`,
+    `Expiry: <b>${safeExpiryDate}</b>`,
+    `Cost: <b>${safeCost}</b>`,
+    `Status: <b>${safeStatus}</b>`,
+    `Auto Renew: <b>${resource.autoRenew ? 'On' : 'Off'}</b>`
   ].join('\n');
 
   if (useTelegram && settings.telegram.chatId && env.TELEGRAM_BOT_TOKEN) {
@@ -87,28 +105,28 @@ export async function sendResourceNotification(
 
   if (useEmail && settings.email.email && env.RESEND_API_KEY && env.RESEND_FROM) {
     try {
-      const subject = `cyberTrack 续费提醒：${resource.name}`;
+      const subject = `cyberTrack ${title}: ${resource.name}`;
       const html = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <h3>续费提醒：${safeName}</h3>
+          <h3>${escapeHtml(title)}: ${safeName}</h3>
           <ul>
-            <li><strong>服务商：</strong>${safeProvider}</li>
-            <li><strong>类型：</strong>${safeType}</li>
-            <li><strong>到期日：</strong>${safeExpiryDate}</li>
-            <li><strong>费用：</strong>${safeCost}</li>
-            <li><strong>状态：</strong>${escapeHtml(status)}</li>
+            <li><strong>Provider:</strong> ${safeProvider}</li>
+            <li><strong>Type:</strong> ${safeType}</li>
+            <li><strong>Expiry:</strong> ${safeExpiryDate}</li>
+            <li><strong>Cost:</strong> ${safeCost}</li>
+            <li><strong>Status:</strong> ${safeStatus}</li>
+            <li><strong>Auto Renew:</strong> ${resource.autoRenew ? 'On' : 'Off'}</li>
           </ul>
-          <p>请及时处理续费，避免服务中断。</p>
         </div>
       `;
       const text = [
-        `续费提醒：${displayValue(resource.name)}`,
-        `服务商：${normalizeProvider(displayValue(resource.provider))}`,
-        `类型：${displayValue(resource.type)}`,
-        `到期日：${displayValue(resource.expiryDate)}`,
-        `费用：${displayValue(resource.currency)}${displayValue(resource.cost)}`,
-        `状态：${status}`,
-        '请及时处理续费，避免服务中断。'
+        `${title}: ${displayValue(resource.name)}`,
+        `Provider: ${normalizeProvider(displayValue(resource.provider))}`,
+        `Type: ${displayValue(resource.type)}`,
+        `Expiry: ${displayValue(resource.expiryDate)}`,
+        `Cost: ${displayValue(resource.currency)}${displayValue(resource.cost)}`,
+        `Status: ${getExpiryStatusText(resource, daysRemaining)}`,
+        `Auto Renew: ${resource.autoRenew ? 'On' : 'Off'}`
       ].join('\n');
 
       await sendEmailResend(env.RESEND_API_KEY, env.RESEND_FROM, {
@@ -129,7 +147,7 @@ export async function sendResourceNotification(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          event: 'expiration_alert',
+          event: resource.autoRenew ? 'auto_renew_checkpoint' : 'expiration_alert',
           resource,
           days_remaining: daysRemaining,
           message: message.replace(/<[^>]*>/g, '')
@@ -167,9 +185,9 @@ export async function sendResourceChangeNotification(
   const useWebhook = isGlobal ? settings.webhook.enabled : resSettings?.channels?.webhook;
 
   const actionMeta: Record<ChangeAction, { icon: string; label: string }> = {
-    created: { icon: '🧩', label: '资源新增' },
-    updated: { icon: '♻️', label: '资源更新' },
-    deleted: { icon: '🗑️', label: '资源删除' }
+    created: { icon: '[create]', label: 'Resource created' },
+    updated: { icon: '[update]', label: 'Resource updated' },
+    deleted: { icon: '[delete]', label: 'Resource deleted' }
   };
 
   const meta = actionMeta[action];
@@ -180,11 +198,11 @@ export async function sendResourceChangeNotification(
 
   const message = [
     `${meta.icon} <b>${meta.label}</b>`,
-    ``,
-    `📌 资产: <b>${safeName}</b>`,
-    `🏢 服务商: <b>${safeProvider}</b>`,
-    `🧩 类型: <b>${safeType}</b>`,
-    `🗓 到期日: <b>${safeExpiryDate}</b>${formatChangeList(changes)}`
+    '',
+    `Asset: <b>${safeName}</b>`,
+    `Provider: <b>${safeProvider}</b>`,
+    `Type: <b>${safeType}</b>`,
+    `Expiry: <b>${safeExpiryDate}</b>${formatChangeList(changes)}`
   ].join('\n');
 
   if (useTelegram && settings.telegram.chatId && env.TELEGRAM_BOT_TOKEN) {
@@ -203,25 +221,25 @@ export async function sendResourceChangeNotification(
 
   if (useEmail && settings.email.email && env.RESEND_API_KEY && env.RESEND_FROM) {
     try {
-      const subject = `cyberTrack ${meta.label}：${resource.name}`;
+      const subject = `cyberTrack ${meta.label}: ${resource.name}`;
       const html = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <h3>${meta.label}：${safeName}</h3>
+          <h3>${meta.label}: ${safeName}</h3>
           <ul>
-            <li><strong>服务商：</strong>${safeProvider}</li>
-            <li><strong>类型：</strong>${safeType}</li>
-            <li><strong>到期日：</strong>${safeExpiryDate}</li>
+            <li><strong>Provider:</strong> ${safeProvider}</li>
+            <li><strong>Type:</strong> ${safeType}</li>
+            <li><strong>Expiry:</strong> ${safeExpiryDate}</li>
           </ul>
-          ${changes.length ? `<p><strong>变更项：</strong><br/>${changes.map((c) => `• ${escapeHtml(c)}`).join('<br/>')}</p>` : ''}
+          ${changes.length ? `<p><strong>Changes:</strong><br/>${changes.map((c) => `- ${escapeHtml(c)}`).join('<br/>')}</p>` : ''}
         </div>
       `;
       const text = [
-        `${meta.label}：${displayValue(resource.name)}`,
-        `服务商：${normalizeProvider(displayValue(resource.provider))}`,
-        `类型：${displayValue(resource.type)}`,
-        `到期日：${displayValue(resource.expiryDate)}`
+        `${meta.label}: ${displayValue(resource.name)}`,
+        `Provider: ${normalizeProvider(displayValue(resource.provider))}`,
+        `Type: ${displayValue(resource.type)}`,
+        `Expiry: ${displayValue(resource.expiryDate)}`
       ]
-        .concat(changes.length ? ['变更项：', ...changes.map((c) => `• ${c}`)] : [])
+        .concat(changes.length ? ['Changes:', ...changes.map((c) => `- ${c}`)] : [])
         .join('\n');
 
       await sendEmailResend(env.RESEND_API_KEY, env.RESEND_FROM, {
