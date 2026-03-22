@@ -31,15 +31,15 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
     if (cycle === BillingCycle.ONE_TIME || days === null) {
       return (
         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">
-          长期 / 无期限
+          Long term
         </span>
       );
     }
 
     return (
       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${style.bg} ${style.text} ${style.border}`}>
-        {style.label === '正常' || style.label === '紧急' || style.label === '预警'
-          ? `剩余 ${days} 天`
+        {style.label === '??' || style.label === '??' || style.label === '??'
+          ? `${days} days left`
           : style.label}
       </span>
     );
@@ -47,21 +47,31 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
 
   const getResourceIcon = (type: ResourceType) => {
     switch (type) {
-      case ResourceType.VPS: return <Server size={16} />;
-      case ResourceType.DOMAIN: return <Globe size={16} />;
-      case ResourceType.PHONE_NUMBER: return <Smartphone size={16} />;
-      case ResourceType.ACCOUNT: return <Key size={16} />;
-      default: return <Server size={16} />;
+      case ResourceType.VPS:
+        return <Server size={16} />;
+      case ResourceType.DOMAIN:
+        return <Globe size={16} />;
+      case ResourceType.PHONE_NUMBER:
+        return <Smartphone size={16} />;
+      case ResourceType.ACCOUNT:
+        return <Key size={16} />;
+      default:
+        return <Server size={16} />;
     }
   };
 
   const getResourceIconClass = (type: ResourceType) => {
     switch (type) {
-      case ResourceType.VPS: return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
-      case ResourceType.DOMAIN: return 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400';
-      case ResourceType.PHONE_NUMBER: return 'bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400';
-      case ResourceType.ACCOUNT: return 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400';
-      default: return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
+      case ResourceType.VPS:
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
+      case ResourceType.DOMAIN:
+        return 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400';
+      case ResourceType.PHONE_NUMBER:
+        return 'bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400';
+      case ResourceType.ACCOUNT:
+        return 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400';
+      default:
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
     }
   };
 
@@ -87,7 +97,7 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
     const isEnabled = settings?.enabled ?? true;
     if (!isEnabled) {
       return (
-        <span title="通知已关闭" className="inline-flex">
+        <span title="Notifications off" className="inline-flex">
           <BellOff size={14} className="text-slate-300" />
         </span>
       );
@@ -98,10 +108,10 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
   const CycleBadge = ({ cycle }: { cycle?: BillingCycle }) => {
     if (!cycle) return null;
     const map = {
-      [BillingCycle.MONTHLY]: { label: '月付', color: 'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20' },
-      [BillingCycle.QUARTERLY]: { label: '季付', color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' },
-      [BillingCycle.YEARLY]: { label: '年付', color: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' },
-      [BillingCycle.ONE_TIME]: { label: '一次性', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20' }
+      [BillingCycle.MONTHLY]: { label: 'M', color: 'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20' },
+      [BillingCycle.QUARTERLY]: { label: 'Q', color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' },
+      [BillingCycle.YEARLY]: { label: 'Y', color: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' },
+      [BillingCycle.ONE_TIME]: { label: '1x', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20' }
     };
     const c = map[cycle] || map[BillingCycle.MONTHLY];
     return <span className={`text-[10px] px-1.5 py-0.5 rounded ml-1.5 font-normal ${c.color}`}>{c.label}</span>;
@@ -124,12 +134,12 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-slate-100 dark:border-slate-800 text-xs font-medium text-slate-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-800/50">
-              <SortableHeader field="name" label="资源名称" />
-              <SortableHeader field="provider" label="服务商" />
-              <SortableHeader field="status" label="状态" />
-              <SortableHeader field="expiryDate" label="续费/到期" />
-              <SortableHeader field="cost" label="费用" align="right" />
-              <th className="px-6 py-4 font-semibold text-right w-36">操作</th>
+              <SortableHeader field="name" label="Name" />
+              <SortableHeader field="provider" label="Provider" />
+              <SortableHeader field="status" label="Status" />
+              <SortableHeader field="expiryDate" label="Renew / Expire" />
+              <SortableHeader field="cost" label="Cost" align="right" />
+              <th className="px-6 py-4 font-semibold text-right w-48">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
@@ -140,7 +150,7 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
                     <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center">
                       <Server size={20} className="opacity-20" />
                     </div>
-                    <span>列表为空</span>
+                    <span>No resources</span>
                   </div>
                 </td>
               </tr>
@@ -161,12 +171,8 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
                           </div>
                           <div className="flex flex-wrap items-center mt-1 gap-2">
                             <p className="text-xs text-slate-400 font-mono">ID: {resource.id.slice(0, 4)}</p>
-
-                            {resource.notes && (
-                              <PrivacyField content={resource.notes} compact />
-                            )}
-
-                            {resource.tags && resource.tags.map(tag => (
+                            {resource.notes && <PrivacyField content={resource.notes} compact />}
+                            {resource.tags && resource.tags.map((tag) => (
                               <span key={tag} className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-500 dark:text-slate-400 font-medium">#{tag}</span>
                             ))}
                           </div>
@@ -187,27 +193,28 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
                       {resource.type === ResourceType.ACCOUNT && <CycleBadge cycle={resource.billingCycle} />}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0">
+                      <div className="flex items-center justify-end gap-2 opacity-100 transition-all duration-200">
                         {canRenew(resource) && (
                           <button
                             onClick={() => onRenew(resource)}
-                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                            title="续期"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-2 text-xs text-emerald-200 border border-emerald-400/30 hover:text-emerald-100 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                            title="Renew"
                           >
-                            <RefreshCw size={16} />
+                            <RefreshCw size={14} />
+                            <span>Renew</span>
                           </button>
                         )}
                         <button
                           onClick={() => onEdit(resource)}
                           className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title="编辑"
+                          title="Edit"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button
                           onClick={() => onDelete(resource.id)}
                           className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                          title="删除"
+                          title="Delete"
                         >
                           <Trash2 size={16} />
                         </button>

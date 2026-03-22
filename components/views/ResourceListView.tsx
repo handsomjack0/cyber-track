@@ -16,18 +16,25 @@ interface ResourceListViewProps {
 }
 
 const ResourceListView: React.FC<ResourceListViewProps> = ({
-  title, subtitle, resources, resourceType, onAdd, onEdit, onDelete, onRenew, addButtonLabel
+  title,
+  subtitle,
+  resources,
+  resourceType,
+  onAdd,
+  onEdit,
+  onDelete,
+  onRenew,
+  addButtonLabel
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredResources = resources.filter(r => {
+  const filteredResources = resources.filter((r) => {
     const matchesType = r.type === resourceType;
     if (!matchesType) return false;
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      return r.name.toLowerCase().includes(query) ||
-             r.provider.toLowerCase().includes(query);
+      return r.name.toLowerCase().includes(query) || r.provider.toLowerCase().includes(query);
     }
     return true;
   });
@@ -37,7 +44,7 @@ const ResourceListView: React.FC<ResourceListViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 blueprint-card p-5">
         <span className="blueprint-dimension" data-dim="SECTION" />
         <div>
-          <div className="text-xs uppercase tracking-[0.2em] text-indigo-500 font-semibold">资源管理</div>
+          <div className="text-xs uppercase tracking-[0.2em] text-indigo-500 font-semibold">Resources</div>
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mt-1 blueprint-title">{title}</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">{subtitle}</p>
         </div>

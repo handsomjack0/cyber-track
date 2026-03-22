@@ -26,35 +26,35 @@ const AppContent: React.FC = () => {
   if (!isAuthenticated) return <LoginView />;
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('确定要删除这个资源吗？此操作不可恢复。')) {
+    if (window.confirm('Delete this resource? This action cannot be undone.')) {
       try {
         await deleteResource(id);
       } catch (e) {
-        alert(`删除操作失败: ${e instanceof Error ? e.message : '未知错误'}`);
+        alert(`Delete failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
       }
     }
   };
 
   const handleRenew = async (resource: Resource) => {
     const cycleLabelMap: Record<string, string> = {
-      Monthly: '月付',
-      Quarterly: '季付',
-      Yearly: '年付'
+      Monthly: 'monthly',
+      Quarterly: 'quarterly',
+      Yearly: 'yearly'
     };
-    const cycleLabel = resource.billingCycle ? (cycleLabelMap[resource.billingCycle] || resource.billingCycle) : '当前周期';
-    const confirmed = window.confirm(`确认按${cycleLabel}为资源“${resource.name}”续期吗？系统会自动顺延到期日并重置提醒状态。`);
+    const cycleLabel = resource.billingCycle ? (cycleLabelMap[resource.billingCycle] || resource.billingCycle) : 'current cycle';
+    const confirmed = window.confirm(`Renew "${resource.name}" using the ${cycleLabel} cycle? This will advance the expiry date and reset reminder state.`);
     if (!confirmed) return;
 
     try {
       const updated = await renewResource(resource.id);
-      alert(`续期成功，新到期日为 ${updated.expiryDate || '-'}。`);
+      alert(`Renewal complete. New expiry date: ${updated.expiryDate || '-'}.`);
     } catch (e) {
-      alert(`续期失败: ${e instanceof Error ? e.message : '未知错误'}`);
+      alert(`Renewal failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
     }
   };
 
   const handleSaveResource = async (resourceData: Partial<Resource>) => {
-    const isEdit = Boolean(resourceData.id) && resources.some(r => r.id === resourceData.id);
+    const isEdit = Boolean(resourceData.id) && resources.some((r) => r.id === resourceData.id);
 
     try {
       if (isEdit) {
@@ -65,7 +65,7 @@ const AppContent: React.FC = () => {
       setIsModalOpen(false);
       setEditingResource(null);
     } catch (e) {
-      alert(`保存失败: ${e instanceof Error ? e.message : '请检查网络连接或数据库配置'}`);
+      alert(`Save failed: ${e instanceof Error ? e.message : 'Check your network or database configuration.'}`);
       console.error(e);
     }
   };
@@ -100,57 +100,57 @@ const AppContent: React.FC = () => {
       case 'vps':
         return (
           <ResourceListView
-            title="VPS 实例"
-            subtitle="管理所有虚拟主机和云服务器"
+            title="VPS Instances"
+            subtitle="Manage virtual machines and cloud servers."
             resources={resources}
             resourceType={ResourceType.VPS}
             onAdd={openAddModal}
             onEdit={openEditModal}
             onDelete={handleDelete}
             onRenew={handleRenew}
-            addButtonLabel="添加 VPS"
+            addButtonLabel="Add VPS"
           />
         );
       case 'domains':
         return (
           <ResourceListView
-            title="域名资产"
-            subtitle="监控域名有效期及 SSL 证书"
+            title="Domains"
+            subtitle="Track domain expiry and certificate schedules."
             resources={resources}
             resourceType={ResourceType.DOMAIN}
             onAdd={openAddModal}
             onEdit={openEditModal}
             onDelete={handleDelete}
             onRenew={handleRenew}
-            addButtonLabel="添加域名"
+            addButtonLabel="Add Domain"
           />
         );
       case 'accounts':
         return (
           <ResourceListView
-            title="账号管理"
-            subtitle="管理会员订阅、软件授权及其他账号服务"
+            title="Accounts"
+            subtitle="Manage subscriptions, licenses, and account-based services."
             resources={resources}
             resourceType={ResourceType.ACCOUNT}
             onAdd={openAddModal}
             onEdit={openEditModal}
             onDelete={handleDelete}
             onRenew={handleRenew}
-            addButtonLabel="添加账号"
+            addButtonLabel="Add Account"
           />
         );
       case 'cellphones':
         return (
           <ResourceListView
-            title="手机号码"
-            subtitle="管理手机号码有效期及保号套餐"
+            title="Phone Numbers"
+            subtitle="Manage number expiry dates and retention plans."
             resources={resources}
             resourceType={ResourceType.PHONE_NUMBER}
             onAdd={openAddModal}
             onEdit={openEditModal}
             onDelete={handleDelete}
             onRenew={handleRenew}
-            addButtonLabel="添加号码"
+            addButtonLabel="Add Number"
           />
         );
       case 'settings':
@@ -216,7 +216,10 @@ const AppContent: React.FC = () => {
 
       <AddResourceModal
         isOpen={isModalOpen}
-        onClose={() => { setIsModalOpen(false); setEditingResource(null); }}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingResource(null);
+        }}
         onSave={handleSaveResource}
         initialData={editingResource}
       />
