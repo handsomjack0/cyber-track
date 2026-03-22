@@ -4,6 +4,8 @@ import { resources as resourcesTable } from './db/schema';
 import { eq } from 'drizzle-orm';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const PRE_EXPIRY_DEFAULTS = [3, 1, 0];
+const OVERDUE_DEFAULTS = [-1, -3, -7];
 
 function toDateOnly(value?: string | null) {
   if (!value) return null;
@@ -20,6 +22,10 @@ function diffDays(from: Date, to: Date) {
   const start = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate());
   const end = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate());
   return Math.floor((end - start) / MS_PER_DAY);
+}
+
+function buildReminderSchedule(reminderDays: number) {
+  return new Set<number>([reminderDays, ...PRE_EXPIRY_DEFAULTS, ...OVERDUE_DEFAULTS]);
 }
 
 export const onScheduled: PagesFunction<Env> = async (context) => {
@@ -45,9 +51,10 @@ export const onScheduled: PagesFunction<Env> = async (context) => {
     const reminderDays = isGlobal
       ? settings.reminderDays
       : (resSettings?.reminderDays ?? settings.reminderDays);
+    const reminderSchedule = buildReminderSchedule(reminderDays);
 
     if (resSettings && resSettings.enabled === false) continue;
-    if (daysRemaining > reminderDays) continue;
+    if (!reminderSchedule.has(daysRemaining)) continue;
 
     const lastNotified = resSettings?.lastNotified;
     if (lastNotified === todayKey) continue;
